@@ -1,4 +1,4 @@
-# sam_count pipeline
+# nCovPopDyn pipeline
 
 This pipeline was created as a simple tool to study the change of nucleotide diversity over time in a collection of sequences.
 
