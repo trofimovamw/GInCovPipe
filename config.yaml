@@ -1,0 +1,24 @@
+# raw samples dat filenmae
+samples: ""
+# table name with format, delimiter, date column name, active cases column name, date format
+# Examples:
+# 1/22/20: "%m/%d/%y"
+# 22-01-2020: "%d-%m-%Y"
+# 2020-02-24T18:00:00: "%Y-%m-%dT%H:%M:%S"
+reported_cases: ["file.csv",",","Date","Cases","%Y-%m-%d"]
+# smooth the reported cases data?
+smoothing: False
+# metadata filename
+samples_meta: ""
+# consensus filename
+consensus: ""
+# number of sequences per bin for binning mode with equally sized bins
+number_per_bin: [15,25,50,100]
+# number of days per bin for binning mode with equal amount of calendar days
+days_per_bin: [10,12,15,17,25]
+# minimal bin size
+min_bin_size: 15
+# path to JAR-file
+samfixcigars: ""
+# path to Samtools (optional)
+samtools: ""
