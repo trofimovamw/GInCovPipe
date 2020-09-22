@@ -1,5 +1,6 @@
 #library('latex2exp')
 library(ggplot2)
+library(grid)
 source("dateFormatRoutines.r")
 
 plotSplineDerivative<- function(spline.table, outputpath) {
@@ -78,7 +79,7 @@ plotSplineWithNewCases <-function(data.table, spline.table, outputFile) {
     #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
     geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=rescale(spline.table$value_trueN, minX, maxX, minY, maxY)), color=mycolors["true"], size = 2, alpha=0.5)+
     geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=spline.table$value), color=mycolors["esti"], size = 2, alpha=0.5)+
-    scale_x_date(date_breaks = "months" , date_labels = "%d-%b") +
+    scale_x_date(date_breaks = "months" , date_labels = "%Y-%m-%d") +
     scale_y_continuous(
       expression(paste("est. ", theta)),
       #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
@@ -90,19 +91,49 @@ plotSplineWithNewCases <-function(data.table, spline.table, outputFile) {
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=14),
-      axis.title = element_text(size=14),
+      axis.text = element_text(size=12),
+      axis.title = element_text(size=12),
       legend.text = element_text(size=12),
       legend.title = element_text(size=12, face="bold")
     )
 
+    minX <- max(min(data.table$sampleSize),0)
+    maxX <- max(data.table$sampleSize)
+    minY <- max(min(data.table$sampleSize),0)
+    maxY <- max(data.table$sampleSize)
+    p_sample_size <- ggplot() +
+    geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=0.7, color="black")+
+    geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=0.7, color="black", alpha="0.0") +
+    scale_y_continuous(
+      expression("cumulative bin size"),
+      #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
+      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "active cases")) +
+    xlab("") +
+
+    scale_x_date(date_breaks = "months" , date_labels = "%Y-%m-%d") +
+    theme(
+      axis.title.y = element_text(color = "black"),
+      axis.text.y = element_text(color = "black"),
+      axis.title.y.right = element_text(color = "white"),
+      axis.text.y.right = element_text(color = "black"),
+      axis.text = element_text(size=12),
+      axis.title = element_text(size=12),
+      legend.text = element_text(size=12),
+      legend.title = element_text(size=12, face="bold")
+    )
+
+
+
     #outputFile = paste0(outputpath, "/esti_vs_real_PopulationSize_splineFit.pdf")
-    ggsave(p_spline_esti_realN,
-           height = 8,
-           width = 16,
-           dpi = 220,
-           device = "pdf",
-           file = outputFile)
+    pdf(outputFile, height = 11, width = 13, paper = "special")
+    grid.draw(rbind(ggplotGrob(p_spline_esti_realN), ggplotGrob(p_sample_size), size = "last"))
+    dev.off()
+    # ggsave(plots_combo,
+    #        height = 8,
+    #        width = 16,
+    #        dpi = 220,
+    #        device = "pdf",
+    #        file = outputFile)
   #}
 }
 
@@ -133,9 +164,9 @@ plotSpline <- function(data.table, spline.table, outputFile) {
   minDate <- min(as.Date(data.table$meanBinDate))
   p_spline <- ggplot() +
     geom_point(aes(days.as.Date(data.table$t, minDate), y=data.table$value), alpha=0.5, size=2) +
-    geom_line(aes(x=days.as.Date(spline.table$t,minDate), spline.table$value), color="red", size = 2, alpha=0.7)+
+    geom_line(aes(x=days.as.Date(spline.table$t,minDate), spline.table$value), color="red", size = 2, alpha=0.7) +
     xlab("") +
-    scale_x_date(date_breaks = "months" , date_labels = "%d-%b") +
+    scale_x_date(date_breaks = "months" , date_labels = "%Y-%m-%d") +
     ylab(expression(paste("estim. ", theta)))+
     theme(axis.text = element_text(size=12),
         axis.title = element_text(size=12),

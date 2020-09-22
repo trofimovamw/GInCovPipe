@@ -8,11 +8,11 @@ Created on Mon Jul 13 16:44:06 2020
 
 import os
 
+import re
+
 from pathlib import Path
 
 import numpy as np
-
-import math
 
 import csv
 
@@ -20,15 +20,12 @@ from bam_to_fingerprints import SAMtoFP
 
 from modular_theta_from_dict import analyzeTrajectory
 
-import matplotlib
-
 import matplotlib.pyplot as plt
 
 import pandas as pd
 
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
-from scipy.interpolate import make_interp_spline, BSpline
 
 import datetime
 
@@ -55,6 +52,7 @@ table_date_col = snakemake.params.rep_cases[2]
 table_active_col = snakemake.params.rep_cases[3]
 table_date_format = snakemake.params.rep_cases[4]
 min_bin_size = snakemake.params.min_bin_size
+log_transform = snakemake.params.log_transform
 smoothing = snakemake.params.smoothing
 table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
 reference = FILEPATH_interm.parent / ref
@@ -393,16 +391,36 @@ for folder in binnings:
     print("Plotting")
     if not os.path.exists(str(out_dir)):
         os.makedirs(str(out_dir))
+    
+    
 
+    plot_title = folder
+    if folder.startswith('cal_week'):
+        plot_title = "Binning by calendar week"
+    if folder.startswith('eq_days'):
+        m = re.search(r'\d+', folder)
+        plot_title = "Binning by "+m[0]+" days"
+    if folder.startswith('eq_size'):
+        m = re.search(r'\d+', folder)
+        plot_title = "Binning by "+m[0]+" sequences"
+    if folder.startswith('fuzzy_days'):
+        m = re.search(r'\d+', folder)
+        plot_title = "Fuzzy binning by "+m[0]+" days"
+        
+    # Date formatting for plots
+    dates = np.array([datetime.datetime.strptime(d,"%Y-%m-%d").date() for d in mean_header_bin])
 
+    #locator = mdates.DayLocator()
+    
     fig, ax1 = plt.subplots()
-    ax1.set_title("%s" % folder)
+    ax1.set_title("%s" % plot_title)
     ax1.set_xlabel('Mean bin date')
     ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
-    ax1.errorbar(weeks, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
+    ax1.errorbar(mean_header_bin, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
     ax1.tick_params(axis='y', labelcolor='crimson')
-    ax1.set_xticks(range(0,len(mean_header_bin)))
-    ax1.set_xticklabels(mean_header_bin,rotation=60)
+    ax1.set_xticks(mean_header_bin[::2])
+    ax1.set_xticklabels(mean_header_bin[::2],rotation=45)
+    #ax1.xaxis.set_major_locator(locator)
     ax2 = ax1.twinx()
     ax2.set_ylabel('Sample size', color='royalblue')
     ax2.plot(weeks, num_seqs, color='royalblue')
@@ -416,13 +434,13 @@ for folder in binnings:
     plt.clf()
 
     fig, ax1 = plt.subplots()
-    ax1.set_title("%s" % folder)
+    ax1.set_title("%s" % plot_title)
     ax1.set_xlabel('Mean bin date')
     ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
-    ax1.errorbar(weeks, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
+    ax1.errorbar(mean_header_bin, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
     ax1.tick_params(axis='y', labelcolor='crimson')
-    ax1.set_xticks(range(0,len(mean_header_bin)))
-    ax1.set_xticklabels(mean_header_bin,rotation=60)
+    ax1.set_xticks(mean_header_bin[::2])
+    ax1.set_xticklabels(mean_header_bin[::2],rotation=45)
     ax2 = ax1.twinx()
     ax2.set_ylabel('Active cases (smoothed bin)', color='forestgreen')
     ax2.plot(weeks, rep_cases_smooth_range, color='forestgreen')
@@ -436,13 +454,13 @@ for folder in binnings:
     plt.clf()
 
     fig, ax1 = plt.subplots()
-    ax1.set_title("%s" % folder)
+    ax1.set_title("%s" % plot_title)
     ax1.set_xlabel('Mean bin date')
     ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
-    ax1.errorbar(weeks, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
+    ax1.errorbar(mean_header_bin, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
     ax1.tick_params(axis='y', labelcolor='crimson')
-    ax1.set_xticks(range(0,len(mean_header_bin)))
-    ax1.set_xticklabels(mean_header_bin,rotation=60)
+    ax1.set_xticks(mean_header_bin[::2])
+    ax1.set_xticklabels(mean_header_bin[::2],rotation=45)
     ax2 = ax1.twinx()
     ax2.set_ylabel('Active cases (%s-day window, poly-order %s)' % (window,poly), color='forestgreen')
     ax2.plot(weeks, rep_cases_smooth_wbin, color='forestgreen')
@@ -456,13 +474,13 @@ for folder in binnings:
     fig.savefig(str(name),dpi=300)
     plt.clf()
 
-    plt.title("%s" % folder)
+    plt.title("%s" % plot_title)
     plt.plot(weeks, origins, '-', color='green', label="Origins")
     plt.plot(weeks, num_mut, 'o', color='royalblue', label="Number of mutants")
     plt.xlabel('Mean bin date')
     plt.ylabel('Count')
     plt.xticks(range(0,len(mean_header_bin)), mean_header_bin)
-    plt.xticks(rotation=60)
+    plt.xticks(rotation=45)
     plt.legend()
 
     name = str(out_dir)+"/plot_"+folder+"_originsvsmut.png"
@@ -475,16 +493,6 @@ for folder in binnings:
     """
     4. Write table - with mean dates from headers; to compare with reported cases
     """
-#    # TODO:
-#    # check the table has right smoothed values
-#    name_table = "table_"+folder+"_thetas_var_from_poiss.tsv"
-#    table_path = str(out_dir) + '/' + name_table
-#    with open(table_path, 'w+', newline='') as csvfile:
-#        writer = csv.writer(csvfile, delimiter='\t',
-#                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
-#        writer.writerow(["t","value","variance","binSize","daysPerBin","numberOfOrigins","meanBinDate","newCases_total_positive_on_mean","newCases_total_positive_mean_on_all","newCases_new_positive_on_mean","newCases_new_positive_on_all","listOfDates"])
-#        for i in range(len(weeks)):
-#            writer.writerow([weeks[i],thetas[i],variance[i],num_seqs[i],delta_days[i],origins[i],mean_header_bin[i],rep_cases_a[i],rep_cases_d[i],rep_cases_b[i],rep_cases_c[i],lists_of_dates[i]])
 
     name_table = "table_"+folder+"_thetas_var_from_size.tsv"
     table_path = str(out_dir) + '/' + name_table
@@ -505,7 +513,7 @@ for folder in binnings:
 """
 Sort and write the merged bins array
 """
-bin_merging_data_ = sorted(bin_merging_data)#, key=lambda bin_merging_data: bin_merging_data[0])
+bin_merging_data_ = sorted(bin_merging_data)
 weeks = np.arange(0, len(bin_merging_data_))
 variance_m = []
 variance_sm = []
@@ -529,7 +537,14 @@ for i, mbin in enumerate(bin_merging_data_):
     rep_cases_wbin.append(mbin[-1])
 
 name_table = "table_merged_thetas_var_from_size.tsv"
+
 table_path = str(out_dir) + '/' + name_table
+
+if log_transform:
+    thetas_m_log = np.log(np.array(thetas_m))
+    thetas_m = np.exp(thetas_m_log)
+    name_table = "table_merged_thetas_var_from_size_logtransformed_values.tsv"
+
 with open(table_path, 'w+', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter='\t',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -539,15 +554,6 @@ with open(table_path, 'w+', newline='') as csvfile:
         if variance_sm[i]<=1/int(min_bin_size):
             writer.writerow([weeks[i],thetas_m[i],variance_sm[i],rep_cases_wbin[i],dates_m[i],num_seqs_m[i]])
 
-
-#name_table = "python_merged_thetas_var_from_poiss.tsv"
-#table_path = str(out_dir) + '/' + name_table
-#with open(table_path, 'w+', newline='') as csvfile:
-#    writer = csv.writer(csvfile, delimiter='\t',
-#                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-#    writer.writerow(["t","value","variance","trueN","meanBinDate"])
-#    for i in range(len(weeks)):
-#        writer.writerow([weeks[i],thetas_m[i],variance_m[i],rep_cases_wbin[i],dates_m[i]])
 
 """
 Plot the merged estimates
@@ -560,8 +566,8 @@ ax1.set_xlabel('Mean bin date')
 ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
 ax1.errorbar(dates_m, thetas_m, yerr=np.array(variance_sm)*10, fmt='.', elinewidth=0.7, color='crimson')
 ax1.tick_params(axis='y', labelcolor='crimson')
-ax1.set_xticks(range(0,len(dates_m)))
-ax1.set_xticklabels(dates_m,rotation=60)
+ax1.set_xticks(dates_m[::2])
+ax1.set_xticklabels(dates_m[::2],rotation=45)
 ax2 = ax1.twinx()
 ax2.set_ylabel('Active cases (%s-day window, poly-order %s)' % (window,poly), color='royalblue')
 ax2.plot(dates_m, rep_cases_wbin, 'o', color='royalblue')
@@ -579,8 +585,8 @@ ax1.set_xlabel('Mean bin date')
 ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
 ax1.errorbar(dates_m, thetas_m, yerr=np.array(variance_sm)*10, fmt='.', elinewidth=0.7, color='crimson')
 ax1.tick_params(axis='y', labelcolor='crimson')
-ax1.set_xticks(range(0,len(dates_m)))
-ax1.set_xticklabels(dates_m,rotation=60)
+ax1.set_xticks(dates_m[::2])
+ax1.set_xticklabels(dates_m[::2],rotation=45)
 ax2 = ax1.twinx()
 ax2.set_ylabel('Active cases on mean bin date', color='forestgreen')
 ax2.plot(dates_m, totpos_onmean, 'o', color='forestgreen')

@@ -14,7 +14,7 @@ dynamic_require <- function(package){
 }
 
 #"ggformula"
-for(p in c("ggplot2", "mgcv")) {
+for(p in c("ggplot2", "mgcv","grid")) {
   dynamic_require(p)
 }
 

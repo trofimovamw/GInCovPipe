@@ -5,10 +5,10 @@ This pipeline was created as a simple tool to study the change of nucleotide div
 ## Input
 As an input the pipeline requires a file containing sequences and a one with a reference consenus sequence.
 
-For the sequences it is important that they contain a sequencing-, or better, sample-date. The date must have the format **%YYYY-%mm-%dd** 
-and has to be either part of the sequence-name or provided in an additional tsv-file. 
+For the sequences it is important that they contain a sequencing-, or better, sample-date. The date must have the format **%YYYY-%mm-%dd**
+and has to be either part of the sequence-name or provided in an additional tsv-file.
 - If the date is part of the sequence-name, then the name should look like this: **'some_name | %YYYY-%mm-%dd'**.   
-- If the date is provided in an additional file, then the file must have a column **'strain'**, containing the sequence name, and a column **'date'**, containing the date. 
+- If the date is provided in an additional file, then the file must have a column **'strain'**, containing the sequence name, and a column **'date'**, containing the date.
 
 ## Output
 The pipeline creates a folder **'results'**, containing all (intermediate) outputs, with the following structure:
@@ -17,26 +17,26 @@ The pipeline creates a folder **'results'**, containing all (intermediate) outpu
     │   ├── analysis                            # Nucleotide diversity plots and table
     │   ├── bam                                 # sorted and indexed bam files
     │   ├── bins                                # binning results
-    │       ├── cal_week                        # binned by calendar week 
+    │       ├── cal_week                        # binned by calendar week
     │       ├── eq_days_10                      # binned by equal days                       
     │       ├── eq_size_100                     # binned by equal number of sequences
     │       ├── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
-    │               ├── bin_*.bam               # binned sequences as BAM 
+    │               ├── bin_*.bam               # binned sequences as BAM
     │               ├── counts_*.tsv            # count matrix                       
     │               ├── header_*.tsv            # header files (seq. name & date)
     |               ├── range_*.tsv             # range of dates of the corresponding bin
     |   ├── fixed_cigars_bins                   # binning results with modified CIGAR strings
-    │       ├── cal_week                        # binned by calendar week 
+    │       ├── cal_week                        # binned by calendar week
     │       ├── eq_days_10                      # binned by equal days                       
     │       ├── eq_size_100                     # binned by equal number of sequences
     │       ├── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
-    │               ├── bin_*.bam               # binned sequences as BAM 
+    │               ├── bin_*.bam               # binned sequences as BAM
     │               ├── bin_*.bai               # corresponding index BAM files
     │   ├── plots                               # Results plots (and tables)
     │   └── raw                                 # Preprocessed files
     │   
     └── ...
-``` 
+```
 The final diversity analysis (plots and tables) can be found in the subfolder **results/plots**.
 
 
@@ -58,7 +58,7 @@ Conda will manage the dependencies of our pipeline. Instructions can be found he
 Create a new environment where the pipeline will be executed, for example like this:
 
 ```
-conda create --name ncov_pipeline 
+conda create --name ncov_pipeline
 ```
 
 Then to activate this environment, type:
@@ -81,24 +81,24 @@ Instruction can be found here: http://lindenb.github.io/jvarkit/SamFixCigar.html
 
 ### 2. Initialize the pipeline
 
-As input the pipeline requires names of the sequence file and the reference genome, binning parameters and so on. 
-These variables are stored in [`config.yaml`](./config.yaml) and used as wildcards to create and link files with each other or as parameters for the binning. 
+As input the pipeline requires names of the sequence file and the reference genome, binning parameters and so on.
+These variables are stored in [`config.yaml`](./config.yaml) and used as wildcards to create and link files with each other or as parameters for the binning.
 
 #### 2.1 Raw sequences
-The pipeline requires a file containing sequences, either with the date in the sequence-name or in a seperate file (as described earlier). 
-It is possible to provide one file of each type (date in seq.name/date in meta-file), however, it is currently not possible to run the pipeline with multiple input files of the same type. 
+The pipeline requires a file containing sequences, either with the date in the sequence-name or in a seperate file (as described earlier).
+It is possible to provide one file of each type (date in seq.name/date in meta-file), however, it is currently not possible to run the pipeline with multiple input files of the same type.
 
-- For sequence files containing the date within the sequence-name, move the file containing your sequences into the folder [`raw`](./raw). 
+- For sequence files containing the date within the sequence-name, move the file containing your sequences into the folder [`raw`](./raw).
 Copy its filename (without extension) and paste it into the variable **samples** on line 1 of [`config.yaml`](./config.yaml):
-  
+
   ```
   samples: "gisaid_cov2020_sequences-300320"
   ```
 
-- For sequence files containing the date in a seperate tsv-file, make sure that both files have the same basename. 
+- For sequence files containing the date in a seperate tsv-file, make sure that both files have the same basename.
 Then move both files (.fasta and .tsv) into the folder [`raw`](./raw).
-Copy its filename (without extension) and paste it into the variable **samples_meta** on line 2 of [`config.yaml`](./config.yaml): 
-  
+Copy its filename (without extension) and paste it into the variable **samples_meta** on line 2 of [`config.yaml`](./config.yaml):
+
   ```
   samples_meta: "SARS-CoV-2"
   ```
@@ -112,11 +112,11 @@ To compare estimated population dynamics with reported active cases, include a t
   ```
   reported_cases: ["reported_cases.csv","\t","date","active_cases","%m/%d/%y"]
   ```
-where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, followed by date column name, active cases column name and a format the date is stored in. 
+where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, followed by date column name, active cases column name and a format the date is stored in.
 
 #### 2.3 Reference consensus sequence
 A reference consensus sequence is provided by the pipeline.
-If you want to use a different consensus sequence, move the sequence into the folder [`consensus`](./consensus). 
+If you want to use a different consensus sequence, move the sequence into the folder [`consensus`](./consensus).
 Further copy and paste its filename (without extension) into the variable **consensus** on line 3 of [`config.yaml`](./config.yaml).
 
   ```
@@ -124,7 +124,7 @@ Further copy and paste its filename (without extension) into the variable **cons
   ```
 
 #### 2.4 Binning parameters
-You also have to set the parameters for some of the binning methods in [`config.yaml`](./config.yaml). 
+You also have to set the parameters for some of the binning methods in [`config.yaml`](./config.yaml).
 You can set the number of sequences per bin on line 5, and the number of days on line 6.
 Parameters should be given as a list.
 
@@ -141,6 +141,21 @@ Because the SamFixCigars package was installed separately and it is not availabl
 samfixcigars: ".../path/to/samfixcigar.jar"
 ```
 
+### 2.6 Metric Parameters
+
+You should also specify minimal size of bin used for spline computation, and whether smoothing of cases reports data and log transformation of theta estimates is desired in [`config.yaml`](./config.yaml):
+
+```
+smoothing: False
+```
+```
+log_transform: True
+```
+```
+min_bin_size: 15
+```
+
+
 
 ### 3. Run
 
@@ -153,4 +168,4 @@ snakemake --use-conda --snakefile Snakefile --cores 2
 
 The ---use-conda parameter allows Snakemake to install packages that are listed in the environment file [`env.yml`](./env/env.yml). The --cores parameter defines how many CPUs the pipeline will use.
 
-Output of each pipeline step can be found in folder **results**. 
+Output of each pipeline step can be found in folder **results**.
