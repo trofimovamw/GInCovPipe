@@ -141,7 +141,7 @@ Because the SamFixCigars package was installed separately and it is not availabl
 samfixcigars: ".../path/to/samfixcigar.jar"
 ```
 
-### 2.6 Metric Parameters
+#### 2.6 Metric Parameters
 
 You should also specify minimal size of bin used for spline computation, and whether smoothing of cases reports data and log transformation of theta estimates is desired in [`config.yaml`](./config.yaml):
 
