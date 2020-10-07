@@ -42,20 +42,29 @@ FILEPATH = Path(__file__).parent
 FILEPATH_interm = FILEPATH.parent
 bins_dir = FILEPATH_interm.parent / "results" / "fixed_cigars_bins"
 head_dir = FILEPATH_interm.parent / "results" / "bins"
+# Output path
 od = snakemake.output[0]
 od_split = od.split("/table")
 out_dir = FILEPATH_interm.parent / od_split[0]
+# Reference location
 ref = snakemake.params.ref[0]
+reference = FILEPATH_interm.parent / ref
+# Reported cases data
 table_name = snakemake.params.rep_cases[0]
 table_delim = snakemake.params.rep_cases[1]
 table_date_col = snakemake.params.rep_cases[2]
 table_active_col = snakemake.params.rep_cases[3]
 table_date_format = snakemake.params.rep_cases[4]
+table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
+# Filtering and transformation parameters
 min_bin_size = snakemake.params.min_bin_size
+min_days_span = snakemake.params.min_days_span
 log_transform = snakemake.params.log_transform
 smoothing = snakemake.params.smoothing
-table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
-reference = FILEPATH_interm.parent / ref
+# Metadata
+#metadata = snakemake.params.meta
+#meta_path = FILEPATH_interm.parent
+
 WORKING_PATH = FILEPATH_interm.parent
 
 
@@ -107,29 +116,18 @@ for folder in binnings:
     """
     Initialize results arrays
     """
-    seq_list_orf = []
-    seq_list_complete = []
+    
     seq_list_base_complete = []
-    # Depr
-    cigar_dict_list = []
-    cigar_pairs_list = []
-    starting_pos = []
+    
 
     seq_dict_int = []
     print("Doing folder ",folder)
     for filename in files:
         path = binnings_dir+'/'+filename
         sam_to_fp = SAMtoFP(path)
-        seq_orf, seq_dict_, cigar_dict, seq_list, seq_list_int, seq_list_, cigar_list, starts, seq_lbase = sam_to_fp.writeFP()
-        seq_list_orf.append(seq_orf)
-        seq_list_complete.append(seq_list)
-        #print(seq_list)
+        seq_lbase = sam_to_fp.writeFP()
         seq_list_base_complete.append(seq_lbase)
-        # Depr
-        cigar_dict_list.append(cigar_dict)
-        cigar_pairs_list.append(cigar_list)
-        starting_pos.append(starts)
-        seq_dict_int.append(seq_list_int)
+        
 
     '''
     Theta from origins - MLE
@@ -162,11 +160,16 @@ for folder in binnings:
     times = []
     dates_per_bin = []
     i = 0
+    #How many days do sequences from one bin span? - for parameter in config
+    num_days_per_bin = []
     for header_file in headers:
         path =  headers_dir+ '/'+header_file
         table = pd.read_table(path, header=0)
         if not table.empty:
             dates = table['date'].tolist()
+            dates_dt = np.array(dates, dtype='datetime64[s]')
+            delta_days = (max(dates_dt)-min(dates_dt))/np.timedelta64(1,'D')
+            num_days_per_bin.append(delta_days)
             mean = (np.array(dates, dtype='datetime64[s]').view('i8').mean().astype('datetime64[s]'))
             #print(mean)
             lists_of_dates.append(dates)
@@ -362,26 +365,6 @@ for folder in binnings:
                 else:
                     rep_cases_smooth_wbin.append(0)
 
-#                if len(smoothing_data)>2:
-#                    window = len(smoothing_data)
-#                    if window % 2 == 0:
-#                        window -= 1
-#
-#                    index = np.where(np.array(dates_nt)==mean)
-#                    mean_rep_cases = smoothed_data[index]
-#                    rep_cases_smooth_wbin.append(mean_rep_cases)
-#                elif len(smoothing_data)==2:
-#                    window = len(smoothing_data)
-##                    if window % 2 == 0:
-##                        window -= 1
-#                    smoothed_data = savgol_filter(smoothing_data, window, 1)
-#                    index = np.where(np.array(ex_dates)==mean)
-#                    mean_rep_cases = smoothed_total_positives[index]
-#                    rep_cases_smooth_wbin.append(mean_rep_cases)
-#                elif len(smoothing_data)==1:
-#                    rep_cases_smooth_wbin.append(smoothed_total_positives[0])
-#                else:
-#                    rep_cases_smooth_wbin.append(0)
         print(rep_cases_smooth_wbin)
 
 
@@ -418,8 +401,8 @@ for folder in binnings:
     ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
     ax1.errorbar(mean_header_bin, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
     ax1.tick_params(axis='y', labelcolor='crimson')
-    ax1.set_xticks(mean_header_bin[::2])
-    ax1.set_xticklabels(mean_header_bin[::2],rotation=45)
+    ax1.set_xticks(mean_header_bin[::3])
+    ax1.set_xticklabels(mean_header_bin[::3],rotation=45)
     #ax1.xaxis.set_major_locator(locator)
     ax2 = ax1.twinx()
     ax2.set_ylabel('Sample size', color='royalblue')
@@ -439,8 +422,8 @@ for folder in binnings:
     ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
     ax1.errorbar(mean_header_bin, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
     ax1.tick_params(axis='y', labelcolor='crimson')
-    ax1.set_xticks(mean_header_bin[::2])
-    ax1.set_xticklabels(mean_header_bin[::2],rotation=45)
+    ax1.set_xticks(mean_header_bin[::3])
+    ax1.set_xticklabels(mean_header_bin[::3],rotation=45)
     ax2 = ax1.twinx()
     ax2.set_ylabel('Active cases (smoothed bin)', color='forestgreen')
     ax2.plot(weeks, rep_cases_smooth_range, color='forestgreen')
@@ -459,8 +442,8 @@ for folder in binnings:
     ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
     ax1.errorbar(mean_header_bin, thetas, yerr=np.array(variance_size)*10, fmt='.', elinewidth=0.7, color='crimson')
     ax1.tick_params(axis='y', labelcolor='crimson')
-    ax1.set_xticks(mean_header_bin[::2])
-    ax1.set_xticklabels(mean_header_bin[::2],rotation=45)
+    ax1.set_xticks(mean_header_bin[::3])
+    ax1.set_xticklabels(mean_header_bin[::3],rotation=45)
     ax2 = ax1.twinx()
     ax2.set_ylabel('Active cases (%s-day window, poly-order %s)' % (window,poly), color='forestgreen')
     ax2.plot(weeks, rep_cases_smooth_wbin, color='forestgreen')
@@ -508,7 +491,7 @@ for folder in binnings:
     """
     for i, date in enumerate(mean_header_bin):
         #if not folder.startswith("eq_size"):
-        bin_merging_data.append((date, thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], rep_cases_smooth_range[i], rep_cases_a[i], rep_cases_smooth_wbin[i]))
+        bin_merging_data.append((date, thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], rep_cases_smooth_range[i], rep_cases_a[i], rep_cases_smooth_wbin[i], num_days_per_bin[i]))
 
 """
 Sort and write the merged bins array
@@ -524,6 +507,7 @@ times = []
 rep_smooth = []
 totpos_onmean = []
 rep_cases_wbin = []
+num_days_wbin = []
 
 for i, mbin in enumerate(bin_merging_data_):
     variance_m.append(mbin[3])
@@ -531,10 +515,11 @@ for i, mbin in enumerate(bin_merging_data_):
     num_seqs_m.append(mbin[4])
     thetas_m.append(mbin[1])
     dates_m.append(mbin[0])
-    times.append(mbin[-4])
-    rep_smooth.append(mbin[-3])
-    totpos_onmean.append(mbin[-2])
-    rep_cases_wbin.append(mbin[-1])
+    times.append(mbin[-5])
+    rep_smooth.append(mbin[-4])
+    totpos_onmean.append(mbin[-3])
+    rep_cases_wbin.append(mbin[-2])
+    num_days_wbin.append(mbin[-1])
 
 name_table = "table_merged_thetas_var_from_size.tsv"
 
@@ -551,8 +536,9 @@ with open(table_path, 'w+', newline='') as csvfile:
     writer.writerow(["t","value","variance","trueN","meanBinDate","sampleSize"])
     for i in range(len(weeks)):
         # If bin size==1/variance is bigger or equal to min_bin_size
-        if variance_sm[i]<=1/int(min_bin_size):
+        if variance_sm[i]<=1/int(min_bin_size):# and num_days_wbin[i]>=min_days_span:
             writer.writerow([weeks[i],thetas_m[i],variance_sm[i],rep_cases_wbin[i],dates_m[i],num_seqs_m[i]])
+        
 
 
 """
@@ -566,8 +552,8 @@ ax1.set_xlabel('Mean bin date')
 ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
 ax1.errorbar(dates_m, thetas_m, yerr=np.array(variance_sm)*10, fmt='.', elinewidth=0.7, color='crimson')
 ax1.tick_params(axis='y', labelcolor='crimson')
-ax1.set_xticks(dates_m[::2])
-ax1.set_xticklabels(dates_m[::2],rotation=45)
+ax1.set_xticks(dates_m[::3])
+ax1.set_xticklabels(dates_m[::3],rotation=45)
 ax2 = ax1.twinx()
 ax2.set_ylabel('Active cases (%s-day window, poly-order %s)' % (window,poly), color='royalblue')
 ax2.plot(dates_m, rep_cases_wbin, 'o', color='royalblue')
@@ -585,8 +571,8 @@ ax1.set_xlabel('Mean bin date')
 ax1.set_ylabel(r'$\theta_{est}$', color='crimson')
 ax1.errorbar(dates_m, thetas_m, yerr=np.array(variance_sm)*10, fmt='.', elinewidth=0.7, color='crimson')
 ax1.tick_params(axis='y', labelcolor='crimson')
-ax1.set_xticks(dates_m[::2])
-ax1.set_xticklabels(dates_m[::2],rotation=45)
+ax1.set_xticks(dates_m[::3])
+ax1.set_xticklabels(dates_m[::3],rotation=45)
 ax2 = ax1.twinx()
 ax2.set_ylabel('Active cases on mean bin date', color='forestgreen')
 ax2.plot(dates_m, totpos_onmean, 'o', color='forestgreen')

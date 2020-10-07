@@ -75,6 +75,14 @@ if config["samples"] != "":
 		shell:
 			"reformat.sh in={input} out={output} underscore ignorejunk overwrite=true 2> {log}"
 
+rule bwa_index:
+	input:
+		expand("consensus/{reference}.fasta", reference=config["consensus"])
+	output:
+		expand("consensus/{reference}.fasta.ann", reference=config["consensus"])
+	shell:
+		"bwa index {input}"
+
 rule merge_fasta:
 	input:
 		fasta1 = expand("results/raw/{sm}_fixed1.fasta", sm=config["samples_meta"]),
@@ -99,6 +107,7 @@ rule replace_dashes:
 rule map:
 	input:
 		ref = expand("consensus/{reference}.fasta", reference=config["consensus"]),
+		index = expand("consensus/{reference}.fasta.ann", reference=config["consensus"]),
 		s = "results/raw/{sample}{sm}_fixed12.fasta"
 	output:
 		sam = "results/bam/{sample}{sm}.bam"
@@ -170,15 +179,19 @@ rule theta_estimates:
 		ref = config["consensus"],
 		rep_cases = config["reported_cases"],
 		min_bin_size = config["min_bin_size"],
-		smoothing = config["smoothing"]
+		smoothing = config["smoothing"],
+		log_transform = config["log_transform"],
+		min_days_span = config["min_days_span"],
+		meta = config["samples"]
 	script:
 		"scripts/metrics/run_fp.py"
 
 rule splines:
 	input:
-		"results/plots/table_merged_thetas_var_from_size.tsv"
+		infile = "results/plots/table_merged_thetas_var_from_size.tsv",
+		meta_abs_path = os.path.join(workflow.basedir,"raw/%s.tsv" % config["samples"])
 	output:
 		result = "results/splines/out_spline.pdf",
 		abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf")
 	shell:
-		"Rscript scripts/Rscripts/splines/computeSpline.R {input} {output.abs_path} trueN"
+		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {output.abs_path} {input.meta_abs_path} trueN"

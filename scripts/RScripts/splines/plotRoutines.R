@@ -63,7 +63,7 @@ rescale <- function(x, minX, maxX, minY, maxY) {
   return((maxY-minY)*(x - minX)/(maxX-minX) + minY)
 }
 
-plotSplineWithNewCases <-function(data.table, spline.table, outputFile) {
+plotSplineWithNewCases <-function(data.table, meta.table, spline.table, outputFile) {
 
   minX <- max(min(spline.table$value_trueN),0)
   maxX <- max(spline.table$value_trueN)
@@ -97,17 +97,14 @@ plotSplineWithNewCases <-function(data.table, spline.table, outputFile) {
       legend.title = element_text(size=12, face="bold")
     )
 
-    minX <- max(min(data.table$sampleSize),0)
-    maxX <- max(data.table$sampleSize)
-    minY <- max(min(data.table$sampleSize),0)
-    maxY <- max(data.table$sampleSize)
+
     p_sample_size <- ggplot() +
-    geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=0.7, color="black")+
-    geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=0.7, color="black", alpha="0.0") +
+    stat_ecdf(aes(days.as.Date(data.table$t, minDate)),geom = "step",size=0.7, color="black")+
+    stat_ecdf(aes(days.as.Date(data.table$t, minDate)),geom = "step",size=0.7, color="black", alpha="0.0") +
     scale_y_continuous(
-      expression("cumulative bin size"),
-      #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
-      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "active cases")) +
+      expression("cumulative frequency on date"),
+      #sec.axis = sec_axis(~ rescale(., minY, maxY, minX_, maxX_ ), name = "active cases")
+      ) +
     xlab("") +
 
     scale_x_date(date_breaks = "months" , date_labels = "%Y-%m-%d") +
@@ -115,7 +112,7 @@ plotSplineWithNewCases <-function(data.table, spline.table, outputFile) {
       axis.title.y = element_text(color = "black"),
       axis.text.y = element_text(color = "black"),
       axis.title.y.right = element_text(color = "white"),
-      axis.text.y.right = element_text(color = "black"),
+      axis.text.y.right = element_text(color = "white"),
       axis.text = element_text(size=12),
       axis.title = element_text(size=12),
       legend.text = element_text(size=12),
