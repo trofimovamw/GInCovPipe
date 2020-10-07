@@ -21,8 +21,9 @@ strptime = datetime.datetime.strptime
 
 
 class SAM:
-    def __init__(self, samfile_path, bins_dir, num_per_bin, days_per_bin):
+    def __init__(self, samfile_path, bins_dir, num_per_bin, days_per_bin, seq_name):
         self.samfile_path = samfile_path
+        self.seq_name = seq_name
         self.samfile = pysam.AlignmentFile(self.samfile_path, "rb")
         self.header = self.samfile.header
         self.sam_dict = self._index_dates()
@@ -49,7 +50,7 @@ class SAM:
         """
         idx_dates = []
         index = 0
-        for read in self.samfile.fetch("EMBOSS_001"):
+        for read in self.samfile.fetch(self.seq_name):
             name = read.query_name
             # date_format = "[|]20[\d]{2}\-[\d]{2}\-[\d]{2}"
             date_format = r"[|]20[\d]{2}\-*\d*-*\d*"
@@ -105,7 +106,7 @@ class SAM:
             print(f"Writing Bin {bin_idx}")
             names = [self.sam_dict[i]['header'] for i in indices[bin_idx]]
             with pysam.AlignmentFile(filename, "wb", header=self.header) as outfile:
-                for read in self.samfile.fetch('EMBOSS_001'):
+                for read in self.samfile.fetch(self.seq_name):
                     # https://github.com/pysam-developers/pysam/issues/509!!!
                     read.tid = 0
                     if read.query_name in names:

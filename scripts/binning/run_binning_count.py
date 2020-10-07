@@ -3,7 +3,7 @@
 """
 Created on Wed Mar 25 16:24:55 2020
 
-@author: Maria Trofimova
+@author: Yannick Duport, Maria Trofimova
 """
 
 
@@ -26,7 +26,13 @@ days_per_bin = snakemake.params.eq_days
 param1 = num_per_bin[0]
 param2 = days_per_bin[0]
 
-sam = SAM(SAM_PATH, bins_dir, param1, param2)
+reffile = str(snakemake.params.reference)+'.fasta'
+reffile_dir = FILEPATH_interm.parent / "consensus" / reffile
+with open(str(reffile_dir), "r") as file:
+    header = file.readline()
+param3 = header.strip(">")
+param3 = param3.strip("\n")
+sam = SAM(SAM_PATH, bins_dir, param1, param2, param3)
 
 print('-' * 80)
 print("Bins of equal Size")

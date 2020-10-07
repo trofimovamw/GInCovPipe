@@ -7,8 +7,6 @@ Created on Mon Jul 13 15:05:41 2020
 """
 import pysam
 
-#from Bio import SeqIO
-
 
 class SAMtoFP:
 

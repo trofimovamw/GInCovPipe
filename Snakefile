@@ -83,6 +83,22 @@ rule bwa_index:
 	shell:
 		"bwa index {input}"
 
+rule samtools_dict:
+	input:
+		expand("consensus/{reference}.fasta", reference=config["consensus"])
+	output:
+		expand("consensus/{reference}.dict", reference=config["consensus"])
+	shell:
+		"/Users/mariatrofimova/Downloads/bin/samtools dict {input} -o {output}"
+
+rule samtools_faidx:
+	input:
+		expand("consensus/{reference}.fasta", reference=config["consensus"])
+	output:
+		expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
+	shell:
+		"/Users/mariatrofimova/Downloads/bin/samtools faidx {input}"
+
 rule merge_fasta:
 	input:
 		fasta1 = expand("results/raw/{sm}_fixed1.fasta", sm=config["samples_meta"]),
@@ -129,7 +145,7 @@ rule sort_bam:
 	conda:
 		"env/env.yml"
 	shell:
-		"samtools sort {input} > {output} 2> {log}"
+		"/Users/mariatrofimova/Downloads/bin/samtools sort {input} > {output} 2> {log}"
 
 rule index_bam:
 	input:
@@ -141,7 +157,7 @@ rule index_bam:
 	log:
 		"logs/index_{sample}{sm}.log"
 	shell:
-		"samtools index {input} 2> {log}"
+		"/Users/mariatrofimova/Downloads/bin/samtools index {input} 2> {log}"
 
 rule run_binning:
 	input:
@@ -152,7 +168,8 @@ rule run_binning:
 	params:
 		eq_num = config["number_per_bin"],
 		eq_days = config["days_per_bin"],
-		bin_dir = "results/bins"
+		bin_dir = "results/bins",
+		reference = config["consensus"]
 	conda:
 		"env/env.yml"
 	script:
@@ -160,7 +177,9 @@ rule run_binning:
 
 rule fix_cigars_subprocess:
 	input:
-		"results/bins/list_of_binnings.tsv"
+		binnings = "results/bins/list_of_binnings.tsv",
+		dict = expand("consensus/{reference}.dict", reference=config["consensus"]),
+		fai = expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
 	params:
 		java_tool = config["samfixcigars"],
 		samtools = config["samtools"],
