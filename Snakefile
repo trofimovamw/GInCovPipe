@@ -97,7 +97,7 @@ rule samtools_faidx:
 	output:
 		expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
 	shell:
-		"/Users/mariatrofimova/Downloads/bin/samtools faidx {input}"
+		"samtools faidx {input}"
 
 rule merge_fasta:
 	input:
@@ -157,7 +157,7 @@ rule index_bam:
 	log:
 		"logs/index_{sample}{sm}.log"
 	shell:
-		"/Users/mariatrofimova/Downloads/bin/samtools index {input} 2> {log}"
+		"samtools index {input} 2> {log}"
 
 rule run_binning:
 	input:
@@ -209,8 +209,10 @@ rule splines:
 	input:
 		infile = "results/plots/table_merged_thetas_var_from_size.tsv",
 		meta_abs_path = os.path.join(workflow.basedir,"raw/%s.tsv" % config["samples"])
+	params:
+		date_m = config["date_m"]
 	output:
 		result = "results/splines/out_spline.pdf",
 		abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf")
 	shell:
-		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {output.abs_path} {input.meta_abs_path} trueN"
+		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {output.abs_path} {input.meta_abs_path} {params.date_m} trueN"
