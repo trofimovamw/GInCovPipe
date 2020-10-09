@@ -77,11 +77,9 @@ setwd(this.dir)
 source("splineRoutines.r")
 source("plotRoutines.r")
 source("dateFormatRoutines.r")
-#source("dateFormatRoutines.r")
 
 input.table$t <- as.days_since_d0(input.table$meanBinDate)
 spline.table <- computeSplineTable(input.table)
-#outputFile = paste0(outputpath, "/estimatedTheta_splineFit.pdf")
 plotSpline(input.table, spline.table, outputFile)
 
 
@@ -95,7 +93,6 @@ if(trueN) {
   plotRatio(ratio, outputFile_ratio)
 
   outputFile_trueN <- paste0(normalizePath(outputDir),"/reportedNewCases_vs_",fileName)
-  #outputFile = paste0(outputDir, "/esti_vs_real_PopulationSize_splineFit.pdf")
   plotSplineWithNewCases(input.table, spline.table, outputFile_trueN)
   plotCummulativeSampleSize(input.table,outputFile_sampsize)
 }

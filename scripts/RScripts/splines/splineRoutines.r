@@ -53,27 +53,35 @@ computeSpline <- function(input.table) {
                     weights = weights,
                     data=input.table, method="REML")
 
+  #return spline model
   return(gam_mod_cs)
 }
 
 computeSplineTable <- function(input.table) {
+  pseudoNumber=10^-10
+  #log transform, to avoid negative values
+  input.table$value <- log(input.table$value + pseudoNumber)
   gam_mod_cs <- computeSpline(input.table)
   # vector for which the outcomes should be predicted
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
 
   splinePred_gam_cs <- predict.gam(gam_mod_cs, data.frame(t=xx))
 
-  gam.table <- data.frame(t=xx, value=splinePred_gam_cs)
+  #retransfrom
+  gam.table <- data.frame(t=xx, value=exp(splinePred_gam_cs))
 
   return(gam.table)
 }
 
 addSplineValuesForTrueN <- function(input.table, gam.table) {
-  trueN_gam_cs <- gam(trueN ~ s(t,bs="cs"),
+  pseudoNumber=10^-10
+  #log transform, to avoid negative values
+  trueN_gam_cs <- gam(log(trueN + pseudonumber) ~ s(t,bs="cs"),
                       data=input.table, method="REML")
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
   trueN_spline_gam_cs <- predict.gam(trueN_gam_cs, data.frame(t=xx))
-  gam.table["value_trueN"] <- trueN_spline_gam_cs
+  # re-transform on normal scale
+  gam.table["value_trueN"] <- exp(trueN_spline_gam_cs)
 
   return(gam.table)
 }
