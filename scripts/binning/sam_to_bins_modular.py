@@ -21,15 +21,16 @@ strptime = datetime.datetime.strptime
 
 
 class SAM:
-    def __init__(self, samfile_path, bins_dir, num_per_bin, days_per_bin, seq_name):
+    def __init__(self, samfile_path, bins_dir, meta_dir, num_per_bin, days_per_bin, seq_name):
         self.samfile_path = samfile_path
+        self.bins_dir = bins_dir
+        self.meta_dir = meta_dir
         self.seq_name = seq_name
         self.samfile = pysam.AlignmentFile(self.samfile_path, "rb")
         self.header = self.samfile.header
         self.sam_dict = self._index_dates()
         self.eq_num_param = num_per_bin
         self.eq_days_param = days_per_bin
-        self.bins_dir = bins_dir
 
     def _to_dict(self, l):
         sam_dict = {}
@@ -41,6 +42,17 @@ class SAM:
                 'header': name
             }
         return sam_dict
+    
+    def _write_dates_meta(self, idx_dates):
+        filename = "meta_dates.tsv"
+        os.makedirs(self.meta_dir, exist_ok=True)
+        filepath = str(self.meta_dir)+'/'+filename
+        with open(filepath, 'w+', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter='\t',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(["Sequence_ID","Collection_date"])
+            for i in range(len(idx_dates)):
+                writer.writerow([idx_dates[i][2],idx_dates[i][1]])
     
     def _index_dates(self):
         """Extracts headers, dates and index from a samfile
@@ -79,6 +91,7 @@ class SAM:
             else:
                 warn(f"No date found in the following query name: {name}")
         idx_dates.sort(key=lambda x: x[1])
+        self._write_dates_meta(idx_dates)
         sam_dict = self._to_dict(idx_dates)
         return sam_dict
 
@@ -268,24 +281,3 @@ class SAM:
         self._write_header(filenames_header, indices)
         self._write_days_ranges(filenames_range, days_ranges)
         
-
-"""Deprecated
-
-    def bin_eq_size(self, binsize=10):
-        '''Creates bins of equal size (n=10)
-        :return:
-        '''
-        print(f"Reads per bin: {binsize}")
-        n_reads = len(self.sam_dict)
-        n_bins = math.ceil(n_reads/binsize)
-        filenames_bin, filenames_header = self._create_filenames(f"eq_size_{binsize}", n_bins)
-        for i in range(n_bins):
-            open(filenames_bin[i], 'w+')
-
-        indices = [[] for _ in range(n_bins)]
-        for i, value in self.sam_dict.items():
-            indices[math.floor(i / binsize)].append(i)
-    
-        self._write_bins(filenames_bin, indices)
-        self._write_header(filenames_header, indices)
-"""

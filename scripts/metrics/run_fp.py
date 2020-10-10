@@ -59,7 +59,6 @@ table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
 # Filtering and transformation parameters
 min_bin_size = snakemake.params.min_bin_size
 min_days_span = snakemake.params.min_days_span
-log_transform = snakemake.params.log_transform
 smoothing = snakemake.params.smoothing
 # Metadata
 #metadata = snakemake.params.meta
@@ -177,6 +176,7 @@ for folder in binnings:
             mean_header_bin.append(str(mean)[:10])
             times.append(i)
             i+=1
+    
 
     """
     2. Get three counts from real data:
@@ -347,7 +347,7 @@ for folder in binnings:
 
                 mean = str(np.array(days_range, dtype='datetime64[s]').view('i8').mean().astype('datetime64[s]'))[:10]
 
-                # Get the available data points on each date in the bin range
+                # Get the available data points on qeach date in the bin range
                 smoothing_data = []
                 ex_dates = []
 
@@ -491,7 +491,7 @@ for folder in binnings:
     """
     for i, date in enumerate(mean_header_bin):
         #if not folder.startswith("eq_size"):
-        bin_merging_data.append((date, thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], rep_cases_smooth_range[i], rep_cases_a[i], rep_cases_smooth_wbin[i], num_days_per_bin[i]))
+        bin_merging_data.append((date, thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], rep_cases_smooth_range[i], rep_cases_a[i], rep_cases_smooth_wbin[i], num_days_per_bin[i], folder))
 
 """
 Sort and write the merged bins array
@@ -508,6 +508,7 @@ rep_smooth = []
 totpos_onmean = []
 rep_cases_wbin = []
 num_days_wbin = []
+folders = []
 
 for i, mbin in enumerate(bin_merging_data_):
     variance_m.append(mbin[3])
@@ -515,29 +516,26 @@ for i, mbin in enumerate(bin_merging_data_):
     num_seqs_m.append(mbin[4])
     thetas_m.append(mbin[1])
     dates_m.append(mbin[0])
-    times.append(mbin[-5])
-    rep_smooth.append(mbin[-4])
-    totpos_onmean.append(mbin[-3])
-    rep_cases_wbin.append(mbin[-2])
-    num_days_wbin.append(mbin[-1])
+    times.append(mbin[-6])
+    rep_smooth.append(mbin[-5])
+    totpos_onmean.append(mbin[-4])
+    rep_cases_wbin.append(mbin[-3])
+    num_days_wbin.append(mbin[-2])
+    folders.append(mbin[-1])
 
 name_table = "table_merged_thetas_var_from_size.tsv"
 
 table_path = str(out_dir) + '/' + name_table
 
-if log_transform:
-    thetas_m_log = np.log(np.array(thetas_m))
-    thetas_m = np.exp(thetas_m_log)
-    name_table = "table_merged_thetas_var_from_size_logtransformed_values.tsv"
 
 with open(table_path, 'w+', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter='\t',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(["t","value","variance","trueN","meanBinDate","sampleSize"])
+    writer.writerow(["t","value","value_nonorm","variance","trueN","meanBinDate","sampleSize","binningMode","numDaysSeqSpan"])
     for i in range(len(weeks)):
         # If bin size==1/variance is bigger or equal to min_bin_size
         if variance_sm[i]<=1/int(min_bin_size):# and num_days_wbin[i]>=min_days_span:
-            writer.writerow([weeks[i],thetas_m[i],variance_sm[i],rep_cases_wbin[i],dates_m[i],num_seqs_m[i]])
+            writer.writerow([weeks[i],thetas_m[i]/(num_days_wbin[i]+1),thetas_m[i],variance_sm[i],rep_cases_wbin[i],dates_m[i],num_seqs_m[i],folders[i][:-3],num_days_wbin[i]])
         
 
 
