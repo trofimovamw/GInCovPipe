@@ -65,10 +65,13 @@ computeSplineTable <- function(input.table) {
   # vector for which the outcomes should be predicted
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
 
-  splinePred_gam_cs <- predict.gam(gam_mod_cs, data.frame(t=xx))
-
+  splinePred_gam_cs <- predict.gam(gam_mod_cs, data.frame(t=xx), se=T)
+  print(splinePred_gam_cs$fit)
+  print(splinePred_gam_cs$se.fit)
+  splinePred_gam_cs$lower <- exp(splinePred_gam_cs$fit)-2*splinePred_gam_cs$se.fit
+  splinePred_gam_cs$upper <- exp(splinePred_gam_cs$fit)+2*splinePred_gam_cs$se.fit
   #retransfrom
-  gam.table <- data.frame(t=xx, value=exp(splinePred_gam_cs))
+  gam.table <- data.frame(t=xx, value=exp(splinePred_gam_cs$fit), se=splinePred_gam_cs$se.fit, lower=splinePred_gam_cs$lower, upper=splinePred_gam_cs$upper)
 
   return(gam.table)
 }
@@ -76,7 +79,7 @@ computeSplineTable <- function(input.table) {
 addSplineValuesForTrueN <- function(input.table, gam.table) {
   pseudoNumber=10^-10
   #log transform, to avoid negative values
-  trueN_gam_cs <- gam(log(trueN + pseudonumber) ~ s(t,bs="cs"),
+  trueN_gam_cs <- gam(log(trueN + pseudoNumber) ~ s(t,bs="cs"),
                       data=input.table, method="REML")
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
   trueN_spline_gam_cs <- predict.gam(trueN_gam_cs, data.frame(t=xx))

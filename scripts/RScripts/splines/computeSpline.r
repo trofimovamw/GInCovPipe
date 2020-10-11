@@ -37,13 +37,17 @@ cat(c("Arguments: ", args, "\n"), sep = "\n")
 
 # set the absolute paths
 inputFile<-normalizePath(args[1])
+metaFile<-normalizePath(args[3])
 input.table = read.table(inputFile, header=T, sep = "\t")
+meta.table = read.table(metaFile, header=T, sep = "\t")
 
 trueN<-FALSE
-if(length(args) == 3) {
-  if(args[3]=="trueN" & "trueN" %in% colnames(input.table))
+if(length(args) == 5) {
+  if(args[5]=="trueN" & "trueN" %in% colnames(input.table))
     trueN=TRUE
 }
+
+date_m<-args[4]
 
 outputFile<-file.path(args[2])
 print(outputFile)
@@ -79,6 +83,17 @@ source("plotRoutines.r")
 source("dateFormatRoutines.r")
 
 input.table$t <- as.days_since_d0(input.table$meanBinDate)
+pointSize <- c()
+for (i in (1:nrow(input.table))) {
+  # rand*(UB1-LB1) + LB1
+  point <- (1/input.table$variance[i]*(max(input.table$sampleSize[i])
+                -min(input.table$sampleSize[i])) + min(input.table$sampleSize[i]))/10
+  pointSize <- c(pointSize, point)
+}
+input.table$pointSize <- pointSize
+meta.table.freq <- as.data.frame(table(meta.table$Collection_date))
+meta.table.freq$t <- as.days_since_d0(meta.table.freq$Var1)
+print(meta.table.freq)
 spline.table <- computeSplineTable(input.table)
 plotSpline(input.table, spline.table, outputFile)
 
@@ -86,13 +101,15 @@ plotSpline(input.table, spline.table, outputFile)
 if(trueN) {
   # for test purposes: give true N in table and plot both
   spline.table <-addSplineValuesForTrueN(input.table, spline.table)
+  print(spline.table)
   ratio <-computeRatio(spline.table$value, spline.table$value_trueN)
-  outputFile_ratio <- paste0(normalizePath(outputDir),"/ratio_",fileName)
-  outputFile_sampsize <- paste0(normalizePath(outputDir),"/sample_size_",fileName)
-
-  plotRatio(ratio, outputFile_ratio)
+  #outputFile_ratio <- paste0(normalizePath(outputDir),"/ratio_",fileName)
+  #outputFile_sampsize <- paste0(normalizePath(outputDir),"/sample_size_",fileName)
+  #plotRatio(ratio, outputFile_ratio)
+  print(meta.table.freq)
 
   outputFile_trueN <- paste0(normalizePath(outputDir),"/reportedNewCases_vs_",fileName)
-  plotSplineWithNewCases(input.table, spline.table, outputFile_trueN)
-  plotCummulativeSampleSize(input.table,outputFile_sampsize)
+  outputFile_trueNSE <- paste0(normalizePath(outputDir),"/reportedNewCases_vs_SE_",fileName)
+  plotSplineWithNewCases(input.table, spline.table, meta.table.freq, date_m, outputFile_trueN)
+  plotSplineWithNewCasesSE(input.table, spline.table, meta.table.freq, date_m, outputFile_trueNSE)
 }

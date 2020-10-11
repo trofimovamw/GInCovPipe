@@ -63,14 +63,14 @@ rescale <- function(x, minX, maxX, minY, maxY) {
   return((maxY-minY)*(x - minX)/(maxX-minX) + minY)
 }
 
-plotSplineWithNewCases <-function(data.table, meta.table, spline.table, date_m, outputFile) {
+plotSplineWithNewCases <-function(data.table, spline.table, meta.table.freq, date_m, outputFile) {
 
   minX <- max(min(spline.table$value_trueN),0)
   maxX <- max(spline.table$value_trueN)
   minY <- max(min(spline.table$value),0)
   maxY <- max(spline.table$value)
+  ylimMax <- max(data.table$value)
   minDate <- min(as.Date(data.table$meanBinDate))
-  palette <- palette(rainbow(16))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
   print(minDate)
   print(maxDate)
@@ -79,31 +79,32 @@ plotSplineWithNewCases <-function(data.table, meta.table, spline.table, date_m, 
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
     geom_point(aes(days.as.Date(data.table$t, minDate), rescale(data.table$trueN, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
-    geom_point(aes(x=days.as.Date(data.table$t, minDate), y=data.table$value), colour=mycolors["esti"], size=data.table$sampleSize, alpha=0.3)+
+    geom_point(aes(x=days.as.Date(data.table$t, minDate), y=data.table$value), colour=mycolors["esti"], size=data.table$pointSize, alpha=0.3)+
     #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
     geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=rescale(spline.table$value_trueN, minX, maxX, minY, maxY)), color=mycolors["true"], size = 2, alpha=0.5)+
     geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=spline.table$value), color=mycolors["esti"], size = 2, alpha=0.5)+
     geom_vline(xintercept=as.Date(date_m), linetype = "dashed", color="darkgray") +
-    scale_size_continuous(range = c(min(data.table$sampleSize), max(data.table$sampleSize))) +
+    scale_size_continuous(range = c(min(data.table$pointSize), max(data.table$pointSize))) +
     scale_y_continuous(
-      expression(paste("est. ", theta,"\n")),
+      expression(paste(theta[est],"\\",Delta,"t","\n")),
       #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
-      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "new reported cases\n")) +
+      sec.axis = sec_axis(~ rescale(., 0, maxY, 0, maxX ), name = "new reported cases\n")) +
     xlab("")+
-    coord_cartesian(xlim=c(minDate, maxDate)) +
+    coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
     scale_x_date(date_breaks = "months" , date_labels = "%B %Y") +
     scale_size_area() +
-    scale_fill_manual(values = palette) +
     theme(
       axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
       axis.title.y = element_text(color = mycolors["estid"]),
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=14),
-      axis.title = element_text(size=16),
-      legend.text = element_text(size=14),
-      legend.title = element_text(size=16, face="bold")
+      axis.text = element_text(size=11, face="bold"),
+      axis.title = element_text(size=14),
+      legend.text = element_text(size=11),
+      legend.title = element_text(size=13, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
     #meta.table.freq.e<-meta.table.freq[!(as.Date(meta.table.freq$Var1)>maxDate),]
     #print(meta.table.freq.e)
@@ -112,7 +113,7 @@ plotSplineWithNewCases <-function(data.table, meta.table, spline.table, date_m, 
     geom_line(aes(x=days.as.Date(meta.table.freq$t,minDate),y=cumsum(meta.table.freq$Freq)), geom = "step", size=0.7, color="darkgray", alpha="0.0") +
     geom_vline(xintercept=as.Date(date_m), linetype = "dashed", color="darkgray") +
     scale_y_continuous(
-      expression("cumulative number of sequences"),
+      expression("number of sequences"),
       sec.axis = sec_axis(~ . , name = derive())) +
     coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0, max(cumsum(meta.table.freq$Freq)))) +
     xlab("") +
@@ -123,26 +124,28 @@ plotSplineWithNewCases <-function(data.table, meta.table, spline.table, date_m, 
       axis.text.y = element_text(color = "black"),
       axis.title.y.right = element_text(color = "black"),
       axis.text.y.right = element_text(color = "black"),
-      axis.text = element_text(size=14),
-      axis.title = element_text(size=16),
-      legend.text = element_text(size=14),
-      legend.title = element_text(size=16, face="bold")
+      axis.text = element_text(size=11, face="bold"),
+      axis.title = element_text(size=12),
+      legend.text = element_text(size=11),
+      legend.title = element_text(size=13, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
 
-    pdf(outputFile, height = 15, width = 15, paper = "special")
+    pdf(outputFile, height = 10, width = 10, paper = "special")
     grid.draw(rbind(ggplotGrob(p_spline_esti_realN), ggplotGrob(p_sample_size), size = "last"))
     dev.off()
 
 }
 
-plotSplineWithNewCasesConfInt <-function(data.table, meta.table, spline.table, date_m, outputFile) {
+plotSplineWithNewCasesSE <-function(data.table, spline.table, meta.table, date_m, outputFile_trueNSE) {
 
   minX <- max(min(spline.table$value_trueN),0)
   maxX <- max(spline.table$value_trueN)
   minY <- max(min(spline.table$value),0)
   maxY <- max(spline.table$value)
+  ylimMax <- max(data.table$value)
   minDate <- min(as.Date(data.table$meanBinDate))
-  palette <- palette(rainbow(16))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
   print(minDate)
   print(maxDate)
@@ -150,44 +153,41 @@ plotSplineWithNewCasesConfInt <-function(data.table, meta.table, spline.table, d
   rel_vs_true_ratio = max(spline.table$value)/max(spline.table$value_trueN)
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
-    geom_point(aes(days.as.Date(data.table$t, minDate), rescale(data.table$trueN, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
-    geom_point(aes(x=days.as.Date(data.table$t, minDate), y=data.table$value), colour=mycolors["esti"], size=data.table$sampleSize, alpha=0.3)+
     #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
     geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=rescale(spline.table$value_trueN, minX, maxX, minY, maxY)), color=mycolors["true"], size = 2, alpha=0.5)+
     geom_ribbon(aes(x=days.as.Date(spline.table$t, minDate), ymin = spline.table$lower, ymax = spline.table$upper), fill = "grey70",alpha=0.5) +
     geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=spline.table$value), color=mycolors["esti"], size = 2, alpha=0.5) +
     geom_vline(xintercept=as.Date(date_m), linetype = "dashed", color="darkgray") +
-    scale_size_continuous(range = c(min(data.table$sampleSize), max(data.table$sampleSize))) +
     scale_y_continuous(
-      expression(paste("est. ", theta,"\n")),
+      expression(paste(theta[est],"\\",Delta,"t","\n")),
       #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
-      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "new reported cases\n")) +
+      sec.axis = sec_axis(~ rescale(., 0, maxY, 0, maxX ), name = "new reported cases\n")) +
     xlab("")+
-    coord_cartesian(xlim=c(minDate, maxDate)) +
+    coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,maxY)) +
     scale_x_date(date_breaks = "months" , date_labels = "%B %Y") +
-    scale_size_area() +
-    scale_fill_manual(values = palette) +
     theme(
       axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
       axis.title.y = element_text(color = mycolors["estid"]),
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=14),
-      axis.title = element_text(size=16),
-      legend.text = element_text(size=14),
-      legend.title = element_text(size=16, face="bold")
+      axis.text = element_text(size=11, face="bold"),
+      axis.title = element_text(size=14),
+      legend.text = element_text(size=11),
+      legend.title = element_text(size=13, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
     #meta.table.freq.e<-meta.table.freq[!(as.Date(meta.table.freq$Var1)>maxDate),]
-    #print(meta.table.freq.e)
-    p_sample_size <- ggplot() +
-    geom_line(aes(x=days.as.Date(meta.table.freq$t,minDate),y=cumsum(meta.table.freq$Freq)), geom = "step", size=0.7, color="darkgray")+
-    geom_line(aes(x=days.as.Date(meta.table.freq$t,minDate),y=cumsum(meta.table.freq$Freq)), geom = "step", size=0.7, color="darkgray", alpha="0.0") +
+
+  p_sample_size <- ggplot() +
+    geom_line(aes(x=days.as.Date(meta.table$t,minDate),y=cumsum(meta.table$Freq)), geom = "step", size=0.7, color="darkgray")+
+    geom_line(aes(x=days.as.Date(meta.table$t,minDate),y=cumsum(meta.table$Freq)), geom = "step", size=0.7, color="darkgray", alpha="0.0") +
     geom_vline(xintercept=as.Date(date_m), linetype = "dashed", color="darkgray") +
     scale_y_continuous(
-      expression("cumulative number of sequences"),
+      expression("number of sequences"),
       sec.axis = sec_axis(~ . , name = derive())) +
-    coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0, max(cumsum(meta.table.freq$Freq)))) +
+    coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0, max(cumsum(meta.table$Freq)))) +
     xlab("") +
     scale_x_date(date_breaks = "months" , date_labels = "%B %Y") +
     theme(
@@ -196,16 +196,17 @@ plotSplineWithNewCasesConfInt <-function(data.table, meta.table, spline.table, d
       axis.text.y = element_text(color = "black"),
       axis.title.y.right = element_text(color = "black"),
       axis.text.y.right = element_text(color = "black"),
-      axis.text = element_text(size=14),
-      axis.title = element_text(size=16),
-      legend.text = element_text(size=14),
-      legend.title = element_text(size=16, face="bold")
+      axis.text = element_text(size=11, face="bold"),
+      axis.title = element_text(size=12),
+      legend.text = element_text(size=11),
+      legend.title = element_text(size=13, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
 
-    pdf(outputFile, height = 15, width = 15, paper = "special")
-    grid.draw(rbind(ggplotGrob(p_spline_esti_realN), ggplotGrob(p_sample_size), size = "last"))
-    dev.off()
-
+  pdf(outputFile, height = 10, width = 10, paper = "special")
+  grid.draw(rbind(ggplotGrob(p_spline_esti_realN), ggplotGrob(p_sample_size), size = "last"))
+  dev.off()
 }
 
 plotCummulativeSampleSize <- function(data.table,outputFile) {
@@ -216,10 +217,10 @@ plotCummulativeSampleSize <- function(data.table,outputFile) {
     geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=2, color=mycolors["trued"], alpha=0.5)+
     #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
     scale_y_continuous("sample size") + xlab("")+
-    theme(axis.text = element_text(size=12),
-        axis.title = element_text(size=12),
-        legend.text = element_text(size=12),
-        legend.title = element_text(size=12, face="bold"))
+    theme(axis.text = element_text(size=11),
+        axis.title = element_text(size=15),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=17, face="bold"))
     #outputFile = paste0(outputpath, "/esti_vs_real_PopulationSize_splineFit.pdf")
     ggsave(p_sample_size,
            height = 8,
