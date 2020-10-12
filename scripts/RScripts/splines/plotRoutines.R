@@ -63,7 +63,53 @@ rescale <- function(x, minX, maxX, minY, maxY) {
   return((maxY-minY)*(x - minX)/(maxX-minX) + minY)
 }
 
-plotSplineWithNewCases <-function(data.table, spline.table, meta.table.freq, date_m, outputFile) {
+plotSplineWithNewCases <-function(data.table, spline.table, outputFile) {
+
+  minX <- max(min(spline.table$value_trueN),0)
+  maxX <- max(spline.table$value_trueN)
+  minY <- max(min(spline.table$value),0)
+  maxY <- max(spline.table$value)
+  ylimMax <- max(data.table$value)
+  minDate <- min(as.Date(data.table$meanBinDate))
+  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  p_spline_esti_realN <- ggplot() +
+    #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
+    geom_point(aes(days.as.Date(data.table$t, minDate), rescale(data.table$trueN, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
+    geom_point(aes(x=days.as.Date(data.table$t, minDate), y=data.table$value), colour=mycolors["esti"], size=data.table$pointSize, alpha=0.3)+
+    #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
+    geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=rescale(spline.table$value_trueN, minX, maxX, minY, maxY)), color=mycolors["true"], size = 2, alpha=0.5)+
+    geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=spline.table$value), color=mycolors["esti"], size = 2, alpha=0.5)+
+    scale_size_continuous(range = c(min(data.table$pointSize), max(data.table$pointSize))) +
+    scale_y_continuous(
+      expression(paste(theta[est],"\\",Delta,"t","\n")),
+      #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
+      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "new reported cases\n")) +
+    xlab("")+
+    #coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
+    scale_x_date(date_breaks = "months" , date_labels = "%b %Y") +
+    theme(
+      axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+      axis.title.y = element_text(color = mycolors["estid"]),
+      axis.text.y = element_text(color = mycolors["estid"]),
+      axis.title.y.right = element_text(color = mycolors["trued"]),
+      axis.text.y.right = element_text(color = mycolors["trued"]),
+      axis.text = element_text(size=12),
+      axis.title = element_text(size=12),
+      legend.text = element_text(size=11),
+      legend.title = element_text(size=13, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
+    )
+
+  ggsave(p_spline_esti_realN,
+           height = 8,
+           width = 16,
+           dpi = 220,
+           device = "pdf",
+           file = outputFile)
+}
+
+plotSplineWithNewCasesSE <-function(data.table, spline.table, outputFile_trueNSE) {
 
   minX <- max(min(spline.table$value_trueN),0)
   maxX <- max(spline.table$value_trueN)
@@ -72,8 +118,76 @@ plotSplineWithNewCases <-function(data.table, spline.table, meta.table.freq, dat
   ylimMax <- max(data.table$value)
   minDate <- min(as.Date(data.table$meanBinDate))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
-  print(minDate)
-  print(maxDate)
+
+  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  rel_vs_true_ratio = max(spline.table$value)/max(spline.table$value_trueN)
+  p_spline_esti_realN <- ggplot() +
+    #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
+    #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
+    geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=rescale(spline.table$value_trueN, minX, maxX, minY, maxY)), color=mycolors["true"], size = 2, alpha=0.5)+
+    geom_ribbon(aes(x=days.as.Date(spline.table$t, minDate), ymin = spline.table$lower, ymax = spline.table$upper), fill = "grey70",alpha=0.5) +
+    geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=spline.table$value), color=mycolors["esti"], size = 2, alpha=0.5) +
+    scale_y_continuous(
+      expression(paste(theta[est],"\\",Delta,"t","\n")),
+      #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
+      sec.axis = sec_axis(~ rescale(., 0, maxY, 0, maxX ), name = "new reported cases\n")) +
+    xlab("")+
+    coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
+    scale_x_date(date_breaks = "months" , date_labels = "%b %Y") +
+    theme(
+      axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+      axis.title.y = element_text(color = mycolors["estid"]),
+      axis.text.y = element_text(color = mycolors["estid"]),
+      axis.title.y.right = element_text(color = mycolors["trued"]),
+      axis.text.y.right = element_text(color = mycolors["trued"]),
+      axis.text = element_text(size=12),
+      axis.title = element_text(size=12),
+      legend.text = element_text(size=11),
+      legend.title = element_text(size=13, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
+    )
+
+  ggsave(p_spline_esti_realN,
+           height = 8,
+           width = 16,
+           dpi = 220,
+           device = "pdf",
+           file = outputFile)
+}
+
+plotCummulativeSampleSize <- function(data.table,outputFile) {
+  minDate <- min(as.Date(data.table$meanBinDate))
+  mycolors <- c("estid"="darkred", "trued"="darkblue","esti"="red", "true"="blue")
+  p_sample_size <- ggplot() +
+    #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
+    geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=2, color=mycolors["trued"], alpha=0.5)+
+    #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
+    scale_y_continuous("sample size") + xlab("")+
+    theme(axis.text = element_text(size=11),
+        axis.title = element_text(size=15),
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=17, face="bold"))
+    #outputFile = paste0(outputpath, "/esti_vs_real_PopulationSize_splineFit.pdf")
+    ggsave(p_sample_size,
+           height = 8,
+           width = 16,
+           dpi = 220,
+           device = "pdf",
+           file = outputFile)
+}
+
+
+plotSplineWithNewCasesSeqData <-function(data.table, spline.table, meta.table.freq, date_m, outputFile) {
+
+  minX <- max(min(spline.table$value_trueN),0)
+  maxX <- max(spline.table$value_trueN)
+  minY <- max(min(spline.table$value),0)
+  maxY <- max(spline.table$value)
+  ylimMax <- max(data.table$value)
+  minDate <- min(as.Date(data.table$meanBinDate))
+  maxDate <- max(days.as.Date(spline.table$t, minDate))
+
   mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
   rel_vs_true_ratio = max(spline.table$value)/max(spline.table$value_trueN)
   p_spline_esti_realN <- ggplot() +
@@ -91,7 +205,7 @@ plotSplineWithNewCases <-function(data.table, spline.table, meta.table.freq, dat
       sec.axis = sec_axis(~ rescale(., 0, maxY, 0, maxX ), name = "new reported cases\n")) +
     xlab("")+
     coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
-    scale_x_date(date_breaks = "months" , date_labels = "%B %Y") +
+    scale_x_date(date_breaks = "months" , date_labels = "%b %Y") +
     scale_size_area() +
     theme(
       axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
@@ -99,8 +213,8 @@ plotSplineWithNewCases <-function(data.table, spline.table, meta.table.freq, dat
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=11, face="bold"),
-      axis.title = element_text(size=14),
+      axis.text = element_text(size=12),
+      axis.title = element_text(size=12),
       legend.text = element_text(size=11),
       legend.title = element_text(size=13, face="bold"),
       panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -117,14 +231,14 @@ plotSplineWithNewCases <-function(data.table, spline.table, meta.table.freq, dat
       sec.axis = sec_axis(~ . , name = derive())) +
     coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0, max(cumsum(meta.table.freq$Freq)))) +
     xlab("") +
-    scale_x_date(date_breaks = "months" , date_labels = "%B %Y") +
+    scale_x_date(date_breaks = "months" , date_labels = "%b %Y") +
     theme(
       axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
       axis.title.y = element_text(color = "black"),
       axis.text.y = element_text(color = "black"),
       axis.title.y.right = element_text(color = "black"),
       axis.text.y.right = element_text(color = "black"),
-      axis.text = element_text(size=11, face="bold"),
+      axis.text = element_text(size=12),
       axis.title = element_text(size=12),
       legend.text = element_text(size=11),
       legend.title = element_text(size=13, face="bold"),
@@ -132,13 +246,13 @@ plotSplineWithNewCases <-function(data.table, spline.table, meta.table.freq, dat
       panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
 
-    pdf(outputFile, height = 10, width = 10, paper = "special")
-    grid.draw(rbind(ggplotGrob(p_spline_esti_realN), ggplotGrob(p_sample_size), size = "last"))
+    ggrid <- grid.arrange(p_spline_esti_realN, p_sample_size, heights=c(0.65, 0.35), nrow=2)
+    pdf(outputFile, height = 10, width = 13, paper = "special")
+    grid.draw(ggrid)
     dev.off()
-
 }
 
-plotSplineWithNewCasesSE <-function(data.table, spline.table, meta.table, date_m, outputFile_trueNSE) {
+plotSplineWithNewCasesSESeqData <-function(data.table, spline.table, meta.table, date_m, outputFile_trueNSE) {
 
   minX <- max(min(spline.table$value_trueN),0)
   maxX <- max(spline.table$value_trueN)
@@ -147,8 +261,7 @@ plotSplineWithNewCasesSE <-function(data.table, spline.table, meta.table, date_m
   ylimMax <- max(data.table$value)
   minDate <- min(as.Date(data.table$meanBinDate))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
-  print(minDate)
-  print(maxDate)
+
   mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
   rel_vs_true_ratio = max(spline.table$value)/max(spline.table$value_trueN)
   p_spline_esti_realN <- ggplot() +
@@ -163,16 +276,16 @@ plotSplineWithNewCasesSE <-function(data.table, spline.table, meta.table, date_m
       #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
       sec.axis = sec_axis(~ rescale(., 0, maxY, 0, maxX ), name = "new reported cases\n")) +
     xlab("")+
-    coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,maxY)) +
-    scale_x_date(date_breaks = "months" , date_labels = "%B %Y") +
+    coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
+    scale_x_date(date_breaks = "months" , date_labels = "%b %Y") +
     theme(
       axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
       axis.title.y = element_text(color = mycolors["estid"]),
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=11, face="bold"),
-      axis.title = element_text(size=14),
+      axis.text = element_text(size=12),
+      axis.title = element_text(size=12),
       legend.text = element_text(size=11),
       legend.title = element_text(size=13, face="bold"),
       panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -189,23 +302,23 @@ plotSplineWithNewCasesSE <-function(data.table, spline.table, meta.table, date_m
       sec.axis = sec_axis(~ . , name = derive())) +
     coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0, max(cumsum(meta.table$Freq)))) +
     xlab("") +
-    scale_x_date(date_breaks = "months" , date_labels = "%B %Y") +
+    scale_x_date(date_breaks = "months" , date_labels = "%b %Y") +
     theme(
       axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
       axis.title.y = element_text(color = "black"),
       axis.text.y = element_text(color = "black"),
       axis.title.y.right = element_text(color = "black"),
       axis.text.y.right = element_text(color = "black"),
-      axis.text = element_text(size=11, face="bold"),
+      axis.text = element_text(size=12),
       axis.title = element_text(size=12),
       legend.text = element_text(size=11),
       legend.title = element_text(size=13, face="bold"),
       panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
       panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
-
-  pdf(outputFile, height = 10, width = 10, paper = "special")
-  grid.draw(rbind(ggplotGrob(p_spline_esti_realN), ggplotGrob(p_sample_size), size = "last"))
+  ggrid <- grid.arrange(p_spline_esti_realN, p_sample_size, heights=c(0.65, 0.35), nrow=2)
+  pdf(outputFile, height = 10, width = 13, paper = "special")
+  grid.draw(ggrid)
   dev.off()
 }
 
