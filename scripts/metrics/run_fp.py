@@ -40,15 +40,17 @@ plt.style.use('ggplot')
 
 FILEPATH = Path(__file__).parent
 FILEPATH_interm = FILEPATH.parent
-bins_dir = FILEPATH_interm.parent / "results" / "fixed_cigars_bins"
+bins_dir = FILEPATH_interm.parent / "results" / "bins"
 head_dir = FILEPATH_interm.parent / "results" / "bins"
 # Output path
 od = snakemake.output[0]
 od_split = od.split("/table")
 out_dir = FILEPATH_interm.parent / od_split[0]
+
 # Reference location
 ref = snakemake.params.ref[0]
 reference = FILEPATH_interm.parent / ref
+
 # Reported cases data
 table_name = snakemake.params.rep_cases[0]
 table_delim = snakemake.params.rep_cases[1]
@@ -56,16 +58,14 @@ table_date_col = snakemake.params.rep_cases[2]
 table_active_col = snakemake.params.rep_cases[3]
 table_date_format = snakemake.params.rep_cases[4]
 table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
+
 # Filtering and transformation parameters
 min_bin_size = snakemake.params.min_bin_size
 min_days_span = snakemake.params.min_days_span
 smoothing = snakemake.params.smoothing
-# Metadata
-#metadata = snakemake.params.meta
-#meta_path = FILEPATH_interm.parent
+
 
 WORKING_PATH = FILEPATH_interm.parent
-
 
 list_binnings = os.listdir(str(bins_dir))
 binnings = []
@@ -75,9 +75,7 @@ for file in list_binnings:
 binnings.sort()
 
 
-'''
-Load real data table - from config
-'''
+#Load real data table - from config
 table = pd.read_table(str(table_path),delimiter=str(table_delim),header=0)
 dates = table[table_date_col].tolist()
 new_positives = table[table_active_col].tolist()
@@ -91,13 +89,11 @@ for i, date in enumerate(dates):
 bin_merging_data = []
 
 # Parameters for smoothing
-
 window = 15
 poly = 2
 
-"""
-List individual binning directories
-"""
+
+#List individual binning directories
 for folder in binnings:
     binnings_dir = str(bins_dir) + '/' + folder
     headers_dir = str(head_dir) + '/' + folder
@@ -112,13 +108,9 @@ for folder in binnings:
             files.append(file)
     files.sort()
 
-    """
-    Initialize results arrays
-    """
-    
+    #Initialize results arrays
     seq_list_base_complete = []
     
-
     seq_dict_int = []
     print("Doing folder ",folder)
     for filename in files:
@@ -128,25 +120,17 @@ for folder in binnings:
         seq_list_base_complete.append(seq_lbase)
         
 
-    '''
-    Theta from origins - MLE
-    '''
 
+    #Theta from origins - MLE
     analyze = analyzeTrajectory(seq_list_base_complete, '')
     thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
     weeks = np.arange(0,len(thetas))
 
-    '''
-    Theta from segregating sites
-    '''
-    #analyze2 = analyzeTrajectory(seq_dict_int, '')
-    #thetas = analyze2.analyzeBinsSegrS()
+    
 
-    """
-    Plot thetas together to check trajectory
-
-    1. Get the names of reads from headers and dates
-    """
+    #Plot thetas together to check trajectory
+    #
+    #1. Get the names of reads from headers and dates
     list_headers = os.listdir(headers_dir)
     headers = []
     for file in list_headers:
@@ -178,11 +162,8 @@ for folder in binnings:
             i+=1
     
 
-    """
-    2. Get three counts from real data:
-        a) total_positive on mean date
-    """
-
+    #2. Get three counts from real data:
+    #    a) total_positive on mean date
     rep_cases_a = []
     control_dates_a = []
     for i, date in enumerate(mean_header_bin):
@@ -540,7 +521,7 @@ with open(table_path, 'w+', newline='') as csvfile:
 
 
 """
-Plot the merged estimates
+Plot merged estimates
 """
 
 plt.clf()

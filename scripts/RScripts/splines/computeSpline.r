@@ -49,16 +49,21 @@ if(length(args) > 2) {
     trueN=TRUE
 }
 
-metaFile<-''
-date_m<-''
+meta=FALSE
 if(length(args) == 5) {
-  metaFile<-normalizePath(args[4])
-  date_m<-args[5]
-  meta.table = read.table(metaFile, header=T, sep = "\t")
-  meta.table.freq <- as.data.frame(table(meta.table$Collection_date))
-  meta.table.freq$t <- as.days_since_d0(meta.table.freq$Var1)
+  var1 <- !is.na(as.Date(args[5], "%Y-%m-%d"))
+  #var2
+  if(var1){
+    meta=TRUE
+  } else {
+    cat("\n Please check if the date is in the right format and in the right place.
+            Proceeding without metadata.\n\n")
+  }
 }
 
+if(length(args) == 4) {
+  cat("\n Please supply both meta file path and the marker line date!")
+}
 
 outputFile<-file.path(args[2])
 print(outputFile)
@@ -111,18 +116,20 @@ if(trueN) {
   # for test purposes: give true N in table and plot both
   spline.table <-addSplineValuesForTrueN(input.table, spline.table)
   ratio <-computeRatio(spline.table$value, spline.table$value_trueN)
-  #outputFile_ratio <- paste0(normalizePath(outputDir),"/ratio_",fileName)
-  #outputFile_sampsize <- paste0(normalizePath(outputDir),"/sample_size_",fileName)
-  #plotRatio(ratio, outputFile_ratio)
 
   outputFile_trueN <- paste0(normalizePath(outputDir),"/reportedNewCases_vs_",fileName)
   outputFile_trueNSE <- paste0(normalizePath(outputDir),"/reportedNewCases_vs_SE_",fileName)
   plotSplineWithNewCases(input.table, spline.table, outputFile_trueN)
   plotSplineWithNewCasesSE(input.table, spline.table, outputFile_trueNSE)
-  if(metaFile!='') {
+  if(meta) {
+    metaFile<-normalizePath(args[4])
+    print(metaFile)
+    date_m<-args[5]
+    meta.table = read.table(metaFile, header=T, sep = "\t")
+    meta.table.freq <- as.data.frame(table(meta.table$Collection_date))
+    meta.table.freq$t <- as.days_since_d0(meta.table.freq$Var1)
     plotSplineWithNewCasesSeqData(input.table, spline.table, meta.table.freq, date_m, outputFile_trueN)
     plotSplineWithNewCasesSESeqData(input.table, spline.table, meta.table.freq, date_m, outputFile_trueNSE)
   }
-
 
 }

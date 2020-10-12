@@ -84,6 +84,9 @@ for folder in bins_filter:
             subprocess.call("rm %s" % bam_name, shell=True)
             subprocess.call("rm %s" % header_name, shell=True)
             subprocess.call("rm %s" % range_name, shell=True)
+        else:
+            bam_name = str(bins_dir)+"/"+folder+"/"+files_filter[i]
+            subprocess.call("/Users/mariatrofimova/Downloads/bin/samtools index %s" % bam_name, shell=True)
     files = os.listdir(str(bins_dir)+"/"+folder)
     files_filter = list(filter(lambda x: x.endswith('.bam'), files))
     files_filter.sort()

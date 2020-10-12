@@ -56,12 +56,6 @@ class SAMtoFP:
 
 
     def writeFP(self):
-        # Load reference
-#        ref_fasta = SeqIO.parse(open(self.reference),'fasta')
-#        ref_seq = ''
-#        for fasta in ref_fasta:
-#            ref_seq = str(fasta.seq)
-
         # Write pairs
         sequences_list_base = []
        

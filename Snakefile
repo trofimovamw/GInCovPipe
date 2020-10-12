@@ -145,7 +145,7 @@ rule sort_bam:
 	conda:
 		"env/env.yml"
 	shell:
-		"/Users/mariatrofimova/Downloads/bin/samtools sort {input} > {output} 2> {log}"
+		"samtools sort {input} > {output} 2> {log}"
 
 rule index_bam:
 	input:
@@ -159,12 +159,30 @@ rule index_bam:
 	shell:
 		"samtools index {input} 2> {log}"
 
+rule fix_cigars_subprocess:
+	input:
+		bam = "results/bam/{sample}{sm}-sorted.bam",
+		bai = "results/bam/{sample}{sm}-sorted.bam.bai",
+		dict = expand("consensus/{reference}.dict", reference=config["consensus"]),
+		fai = expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
+	params:
+		java_tool = config["samfixcigars"],
+		samtools = config["samtools"],
+		ref = config["consensus"]
+	output:
+		bam = "results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam",
+		bai = "results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam.bai"
+
+	script:
+		"scripts/binning/fix_cigars_subprocess.py"
+
 rule run_binning:
 	input:
-		bam = expand("results/bam/{sample}{sm}-sorted.bam", sample=config["samples"], sm=config["samples_meta"]),
-		bai = expand("results/bam/{sample}{sm}-sorted.bam.bai", sample=config["samples"], sm=config["samples_meta"])
+		bam = expand("results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam", sample=config["samples"], sm=config["samples_meta"]),
+		bai = expand("results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam.bai", sample=config["samples"], sm=config["samples_meta"])
 	output:
-		files_list = "results/bins/list_of_binnings.tsv"
+		files_list = "results/bins/list_of_binnings.tsv",
+		meta = "results/meta/meta_dates.tsv",
 	params:
 		eq_num = config["number_per_bin"],
 		eq_days = config["days_per_bin"],
@@ -175,23 +193,23 @@ rule run_binning:
 	script:
 		"scripts/binning/run_binning_count.py"
 
-rule fix_cigars_subprocess:
-	input:
-		binnings = "results/bins/list_of_binnings.tsv",
-		dict = expand("consensus/{reference}.dict", reference=config["consensus"]),
-		fai = expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
-	params:
-		java_tool = config["samfixcigars"],
-		samtools = config["samtools"],
-		ref = config["consensus"]
-	output:
-		"results/fixed_cigars_bins/list_of_binnings.tsv"
-	script:
-		"scripts/binning/fix_cigars_subprocess.py"
+# rule fix_cigars_subprocess:
+# 	input:
+# 		binnings = "results/bins/list_of_binnings.tsv",
+# 		dict = expand("consensus/{reference}.dict", reference=config["consensus"]),
+# 		fai = expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
+# 	params:
+# 		java_tool = config["samfixcigars"],
+# 		samtools = config["samtools"],
+# 		ref = config["consensus"]
+# 	output:
+# 		"results/fixed_cigars_bins/list_of_binnings.tsv"
+# 	script:
+# 		"scripts/binning/fix_cigars_subprocess.py"
 
 rule theta_estimates:
 	input:
-		"results/fixed_cigars_bins/list_of_binnings.tsv"
+		"results/bins/list_of_binnings.tsv"
 	output:
 		"results/plots/table_merged_thetas_var_from_size.tsv"
 	params:
@@ -207,12 +225,12 @@ rule theta_estimates:
 
 rule splines:
 	input:
-		infile = "results/plots/table_merged_thetas_var_from_size.tsv",
-		meta_abs_path = os.path.join(workflow.basedir,"raw/%s.tsv" % config["samples"])
+		infile = os.path.join(workflow.basedir,"results/plots/table_merged_thetas_var_from_size.tsv"),
+		meta_abs_path = os.path.join(workflow.basedir,"results/meta/meta_dates.tsv")
 	params:
 		date_m = config["date_m"]
 	output:
 		result = "results/splines/out_spline.pdf",
 		abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf")
 	shell:
-		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {output.abs_path} {input.meta_abs_path} {params.date_m} trueN"
+		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {output.abs_path} trueN {input.meta_abs_path} {params.date_m}"
