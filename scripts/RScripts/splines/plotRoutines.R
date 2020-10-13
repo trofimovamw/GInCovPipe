@@ -343,10 +343,10 @@ plotCummulativeSampleSize <- function(data.table,outputFile) {
            file = outputFile)
 }
 
-plotSpline <- function(data.table, spline.table, outputFile) {
-  minDate <- min(as.Date(data.table$meanBinDate))
+plotSpline <- function(input.table, spline.table, outputFile) {
+  minDate <- min(as.Date(input.table$meanBinDate))
   p_spline <- ggplot() +
-    geom_point(aes(days.as.Date(data.table$t, minDate), y=data.table$value), alpha=0.5, size=2) +
+    geom_point(aes(days.as.Date(input.table$t, minDate), y=input.table$value), alpha=0.5, size=2) +
     geom_line(aes(x=days.as.Date(spline.table$t,minDate), spline.table$value), color="red", size = 2, alpha=0.7) +
     xlab("") +
     scale_x_date(date_breaks = "months" , date_labels = "%Y-%m-%d") +

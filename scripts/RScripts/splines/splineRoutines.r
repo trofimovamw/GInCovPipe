@@ -76,14 +76,13 @@ computeSplineTable <- function(input.table) {
 }
 
 addSplineValuesForTrueN <- function(input.table, gam.table) {
-  pseudoNumber=10^-10
-  #log transform, to avoid negative values
-  trueN_gam_cs <- gam(log(trueN + pseudoNumber) ~ s(t,bs="cs"),
-                      data=input.table, method="REML")
+  #trueN comes from poisson distribution, hence no negative values (family=poisson -> link=logs)
+  trueN_gam_cs <- gam(round(trueN) ~ s(t,bs="cs"),
+                      data=input.table, method="REML", family = poisson())
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
-  trueN_spline_gam_cs <- predict.gam(trueN_gam_cs, data.frame(t=xx))
-  # re-transform on normal scale
-  gam.table["value_trueN"] <- exp(trueN_spline_gam_cs)
+  # predict on same scale as response variables (type=response)
+  trueN_spline_gam_cs <- predict.gam(object = trueN_gam_cs, newdata = data.frame(t=xx), type = "response")
+  gam.table["value_trueN"] <-trueN_spline_gam_cs
 
   return(gam.table)
 }

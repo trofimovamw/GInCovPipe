@@ -40,8 +40,6 @@ cat(c("Arguments: ", args, "\n"), sep = "\n")
 
 # set the absolute paths
 inputFile<-normalizePath(args[1])
-input.table = read.table(inputFile, header=T, sep = "\t")
-
 
 trueN<-FALSE
 if(length(args) > 2) {
@@ -98,6 +96,7 @@ source("splineRoutines.r")
 source("plotRoutines.r")
 source("dateFormatRoutines.r")
 
+input.table = read.table(inputFile, header=T, sep = "\t")
 input.table$t <- as.days_since_d0(input.table$meanBinDate)
 pointSize <- c()
 for (i in (1:nrow(input.table))) {
@@ -113,9 +112,8 @@ plotSpline(input.table, spline.table, outputFile)
 
 
 if(trueN) {
-  # for test purposes: give true N in table and plot both
+  # if available: give true N in table and plot both
   spline.table <-addSplineValuesForTrueN(input.table, spline.table)
-  ratio <-computeRatio(spline.table$value, spline.table$value_trueN)
 
   outputFile_trueN <- paste0(normalizePath(outputDir),"/reportedNewCases_vs_",fileName)
   outputFile_trueNSE <- paste0(normalizePath(outputDir),"/reportedNewCases_vs_SE_",fileName)
