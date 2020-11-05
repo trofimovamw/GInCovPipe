@@ -220,6 +220,8 @@ rule theta_estimates:
 		log_transform = config["log_transform"],
 		min_days_span = config["min_days_span"],
 		meta = config["samples"]
+	conda:
+		"env/env.yml"
 	script:
 		"scripts/metrics/run_fp.py"
 
