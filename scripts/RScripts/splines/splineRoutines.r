@@ -5,7 +5,7 @@ source("dateFormatRoutines.r")
 # t, time points for which to infer the derivative
 # gamToDerive, the spline/gam for which the derivatives are inferred
 #gamDerivative <- function(tt.df, gamToDerive, outputpath) {
-computeSplineDerivativeTable <- function(t, gamToDerive) {
+computeSplineDerivativeTable <- function(t, gamToDerive, infDur) {
   tt.df = data.frame(t=t)
 
   ## finite difference interval, delta t
@@ -14,21 +14,24 @@ computeSplineDerivativeTable <- function(t, gamToDerive) {
   #When type="lpmatrix" then a matrix is returned which yields the values of the linear predictor (minus any offset)
   #when postmultiplied by the parameter vector (in this case se.fit is ignored). The latter option is most useful for
   #getting variance estimates for quantities derived from the model: for example integrated quantities, or derivatives of smooths.
-  X0 <- predict(gamToDerive, tt.df, type = 'lpmatrix')
+  X0 <- predict(gamToDerive, tt.df, type = "lpmatrix")
 
-  # super mall interval for derivation
+  # super small interval for derivation
   tt_eps.df <- tt.df + eps
-
-  X1 <- predict(gamToDerive, tt_eps.df, type = 'lpmatrix')
+  X1 <- predict(gamToDerive, tt_eps.df, type = "lpmatrix")
 
   # finite difference approximation of first derivative
   # the design matrix
   Xp <- (X1 - X0) / eps
-
   # first derivative
   d1_gam <- Xp %*% coef(gamToDerive)
-
-  d1_gam.table <- data.frame(t=t, value=d1_gam)
+  # Standard error of prediction
+  # Covariance matrix
+  Vb <- vcov(gamToDerive)
+  # SE
+  d1_se <- sqrt(diag(Xp %*% Vb %*% t(Xp)))
+  # Taking the exponential of the derivative times infectiousness period
+  d1_gam.table <- data.frame(t=t, value=exp(infDur*d1_gam), lower=exp(infDur*d1_gam-2*d1_se), upper=exp(infDur*d1_gam+2*d1_se))
 
   return(d1_gam.table)
 }
@@ -49,7 +52,7 @@ computeSpline <- function(input.table) {
 
   #compute splines
   #s=smooth function
-  gam_mod_cs <- gam(value ~ s(t,bs="cs"),
+  gam_mod_cs <- gam(value ~ s(t,k = -1,bs="cs"),
                     weights = weights,
                     data=input.table, method="REML")
 
@@ -66,7 +69,7 @@ computeSplineTable <- function(input.table) {
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
 
   splinePred_gam_cs <- predict.gam(gam_mod_cs, data.frame(t=xx), se=T)
-  
+
   splinePred_gam_cs$lower <- exp(splinePred_gam_cs$fit)-1.96*splinePred_gam_cs$se.fit
   splinePred_gam_cs$upper <- exp(splinePred_gam_cs$fit)+1.96*splinePred_gam_cs$se.fit
   #retransfrom
@@ -78,13 +81,24 @@ computeSplineTable <- function(input.table) {
 addSplineValuesForTrueN <- function(input.table, gam.table) {
   #trueN comes from poisson distribution, hence no negative values (family=poisson -> link=logs)
   trueN_gam_cs <- gam(round(trueN) ~ s(t,bs="cs"),
-                      data=input.table, method="REML", family = poisson())
-  xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
+                      data=input.table, method="REML")#, family = poisson())
+  xx <- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
   # predict on same scale as response variables (type=response)
   trueN_spline_gam_cs <- predict.gam(object = trueN_gam_cs, newdata = data.frame(t=xx), type = "response")
-  gam.table["value_trueN"] <-trueN_spline_gam_cs
+  gam.table["value_trueN"] <- trueN_spline_gam_cs
 
   return(gam.table)
+}
+
+computeSplineNewCasesTable <- function(input.table) {
+  repCases_gam_cs <- gam(round(new_cases) ~ s(t,bs="cs"),
+                      data=input.table, method="REML")
+  xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
+  repCases_spline_gam_cs <- predict.gam(repCases_gam_cs, data.frame(t=xx), type = "response")
+  gam.table <- data.frame(t=xx, value=repCases_spline_gam_cs)
+
+  return(gam.table)
+
 }
 
 computeRatio <- function(values, values_trueN) {
