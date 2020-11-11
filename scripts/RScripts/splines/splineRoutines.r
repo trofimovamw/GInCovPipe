@@ -37,43 +37,50 @@ computeSplineDerivativeTable <- function(t, gamToDerive, infDur) {
 }
 
 computeSpline <- function(input.table) {
-    #input table must include a column with meanBinDate, value and variance
-  # add day of year if not present yet
-  #input.table <- addDayOfYearToTable(input.table)
-
+  #input table must include a column with t, value and variance
+  
   #number of data points
   N<-nrow(input.table)
-
-
   #weight: choose 1/variance, maybe better standard deviation?
-  weights <- 1/input.table$variance
+  weights <- 1/(input.table$variance)
   #normalize splines by sum of weights
   weights = weights/sum(weights)
-
-  #compute splines
-  #s=smooth function
-  gam_mod_cs <- gam(value ~ s(t,k = -1,bs="cs"),
-                    weights = weights,
-                    data=input.table, method="REML")
-
+  
+  # optimze k! (default k=10)
+  # increase k=degree of freedom (number of base functions) 
+  # until edf doesn't change substantially
+  k=5
+  edf_act=1
+  repeat {
+    edf = edf_act
+    k<-k+5
+    #compute splines, s=smooth function
+    gam_mod_cs <- gam(round(value) ~ s(t,bs="cs",k=k),
+                      weights = weights,
+                      data=input.table, method="REML", family=gaussian(link="log"))
+    edf_act<- summary(gam_mod_cs)$edf
+    if((edf_act-edf)<0.5 || k>= nrow(input.table))
+      break
+  }
+  
   #return spline model
   return(gam_mod_cs)
 }
 
 computeSplineTable <- function(input.table) {
-  pseudoNumber=10^-10
+  #pseudoNumber=10^-10
   #log transform, to avoid negative values
-  input.table$value <- log(input.table$value + pseudoNumber)
+  #input.table$value <- log(input.table$value + pseudoNumber)
   gam_mod_cs <- computeSpline(input.table)
   # vector for which the outcomes should be predicted
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
 
   splinePred_gam_cs <- predict.gam(gam_mod_cs, data.frame(t=xx), se=T)
 
-  splinePred_gam_cs$lower <- exp(splinePred_gam_cs$fit)-1.96*splinePred_gam_cs$se.fit
-  splinePred_gam_cs$upper <- exp(splinePred_gam_cs$fit)+1.96*splinePred_gam_cs$se.fit
+  splinePred_gam_cs$lower <- (splinePred_gam_cs$fit)-1.96*splinePred_gam_cs$se.fit
+  splinePred_gam_cs$upper <- (splinePred_gam_cs$fit)+1.96*splinePred_gam_cs$se.fit
   #retransfrom
-  gam.table <- data.frame(t=xx, value=exp(splinePred_gam_cs$fit), se=splinePred_gam_cs$se.fit, lower=splinePred_gam_cs$lower, upper=splinePred_gam_cs$upper)
+  gam.table <- data.frame(t=xx, value=(splinePred_gam_cs$fit), se=splinePred_gam_cs$se.fit, lower=splinePred_gam_cs$lower, upper=splinePred_gam_cs$upper)
 
   return(gam.table)
 }
