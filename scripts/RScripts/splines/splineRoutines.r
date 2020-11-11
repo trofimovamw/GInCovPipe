@@ -55,7 +55,7 @@ computeSpline <- function(input.table) {
     edf = edf_act
     k<-k+5
     #compute splines, s=smooth function
-    gam_mod_cs <- gam(round(value) ~ s(t,bs="cs",k=k),
+    gam_mod_cs <- gam(value ~ s(t,bs="cs",k=k),
                       weights = weights,
                       data=input.table, method="REML", family=gaussian(link="log"))
     edf_act<- summary(gam_mod_cs)$edf
