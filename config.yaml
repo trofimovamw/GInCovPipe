@@ -1,28 +1,34 @@
-# raw samples dat filenmae
-samples: "/"
+# raw samples data filename
+samples: ""
 # table name with format, delimiter, date column name, active cases column name, date format
 # Examples:
 # 1/22/20: "%m/%d/%y"
 # 22-01-2020: "%d-%m-%Y"
 # 2020-02-24T18:00:00: "%Y-%m-%dT%H:%M:%S"
-reported_cases: ["","","",""]
+reported_cases: ["data.csv","sep","date_column_name","new_cases_column_name","date_format"]
 # smooth the reported cases data?
 smoothing: False
 # Log-transform the estimates for spline computation?
 log_transform: True
 # metadata filename
-samples_meta: "/"
+samples_meta: ""
 # consensus filename
-consensus: "/"
+consensus: ""
 # number of sequences per bin for binning mode with equally sized bins
-number_per_bin: [15,25,50,100]
+number_per_bin: [30,40,50,60,65]
 # number of days per bin for binning mode with equal amount of calendar days
-days_per_bin: [10,12,15,17,25]
-# minimal bin size
+days_per_bin: [5,10,12,17,20]
+# minimal bin size - some fraction of big bin file
 min_bin_size: 15
 # minimal days span
 min_days_span: 3
+# maximal days span
+max_days_span: 21
 # Date when e.g. lockdown measures came into place - for plots
-date_m: 2020-03-09
+date_m: 2020-03-22
 # path to JAR-file
-samfixcigars: "/"
+samfixcigars: ""
+# Reported cases full path
+rep_cases_full: "path/to/rep_cases"
+# Country name for plot grouping
+group: "country"

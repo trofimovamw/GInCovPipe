@@ -6,6 +6,10 @@ import os
 
 import numpy as np
 
+
+report: "report/workflow.rst"
+
+
 configfile: "config.yaml"
 working_dir = os.getcwd()
 
@@ -48,7 +52,7 @@ if config["samples_meta"] != "":
 		conda:
 			"env/env.yml"
 		shell:
-			"python scripts/add_date_from_metadata.py {input.fasta} {input.meta} {output}"
+			"python scripts/binning/add_date_from_metadata.py {input.fasta} {input.meta} {output}"
 
 	rule strip_whitespaces2:
 		input:
@@ -89,7 +93,7 @@ rule samtools_dict:
 	output:
 		expand("consensus/{reference}.dict", reference=config["consensus"])
 	shell:
-		"/Users/mariatrofimova/Downloads/bin/samtools dict {input} -o {output}"
+		"samtools dict {input} -o {output}"
 
 rule samtools_faidx:
 	input:
@@ -167,7 +171,6 @@ rule fix_cigars_subprocess:
 		fai = expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
 	params:
 		java_tool = config["samfixcigars"],
-		samtools = config["samtools"],
 		ref = config["consensus"]
 	output:
 		bam = "results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam",
@@ -182,7 +185,7 @@ rule run_binning:
 		bai = expand("results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam.bai", sample=config["samples"], sm=config["samples_meta"])
 	output:
 		files_list = "results/bins/list_of_binnings.tsv",
-		meta = "results/meta/meta_dates.tsv",
+		meta = "results/meta/meta_dates.tsv"
 	params:
 		eq_num = config["number_per_bin"],
 		eq_days = config["days_per_bin"],
@@ -192,20 +195,6 @@ rule run_binning:
 		"env/env.yml"
 	script:
 		"scripts/binning/run_binning_count.py"
-
-# rule fix_cigars_subprocess:
-# 	input:
-# 		binnings = "results/bins/list_of_binnings.tsv",
-# 		dict = expand("consensus/{reference}.dict", reference=config["consensus"]),
-# 		fai = expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
-# 	params:
-# 		java_tool = config["samfixcigars"],
-# 		samtools = config["samtools"],
-# 		ref = config["consensus"]
-# 	output:
-# 		"results/fixed_cigars_bins/list_of_binnings.tsv"
-# 	script:
-# 		"scripts/binning/fix_cigars_subprocess.py"
 
 rule theta_estimates:
 	input:
@@ -219,20 +208,19 @@ rule theta_estimates:
 		smoothing = config["smoothing"],
 		log_transform = config["log_transform"],
 		min_days_span = config["min_days_span"],
+		max_days_span = config["max_days_span"],
 		meta = config["samples"]
-	conda:
-		"env/env.yml"
 	script:
 		"scripts/metrics/run_fp.py"
 
 rule splines:
 	input:
-		infile = os.path.join(workflow.basedir,"results/plots/table_merged_thetas_var_from_size.tsv"),
-		meta_abs_path = os.path.join(workflow.basedir,"results/meta/meta_dates.tsv")
+		infile = "results/plots/table_merged_thetas_var_from_size.tsv"
 	params:
-		date_m = config["date_m"]
+		rep_cases = config["rep_cases_full"],
+		group = config["group"]
 	output:
 		result = "results/splines/out_spline.pdf",
-		abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf")
+		abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 	shell:
-		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {output.abs_path} trueN {input.meta_abs_path} {params.date_m}"
+		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {params.rep_cases} {params.group} {output.abs_path}"
