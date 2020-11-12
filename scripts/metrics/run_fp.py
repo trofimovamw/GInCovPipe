@@ -8,8 +8,6 @@ Created on Mon Jul 13 16:44:06 2020
 
 import os
 
-#import re
-
 from pathlib import Path
 
 import numpy as np
@@ -20,12 +18,9 @@ from bam_to_fingerprints import SAMtoFP
 
 from modular_theta_from_dict import analyzeTrajectory
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 import pandas as pd
-
-#from scipy.interpolate import interp1d
-#from scipy.signal import savgol_filter
 
 import datetime
 
@@ -62,6 +57,7 @@ table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
 # Filtering and transformation parameters
 min_bin_size = snakemake.params.min_bin_size
 min_days_span = snakemake.params.min_days_span
+max_days_span = snakemake.params.max_days_span
 smoothing = snakemake.params.smoothing
 
 
@@ -86,7 +82,7 @@ for i, date in enumerate(dates):
     dates_nt.append(date_r)
 
 bin_merging_data = []
- 
+
 
 #List individual binning directories
 for folder in binnings:
@@ -105,22 +101,23 @@ for folder in binnings:
 
     #Initialize results arrays
     seq_list_base_complete = []
-    
+    seq_list_pos_complete = []
+
     seq_dict_int = []
     print("Doing folder ",folder)
     for filename in files:
         path = binnings_dir+'/'+filename
         sam_to_fp = SAMtoFP(path)
-        seq_lbase = sam_to_fp.writeFP()
+        seq_lbase, seq_posbase = sam_to_fp.writeFP()
         seq_list_base_complete.append(seq_lbase)
-        
+        seq_list_pos_complete.append(seq_posbase)
 
 
     #Theta from origins - MLE
     analyze = analyzeTrajectory(seq_list_base_complete, '')
     thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
     weeks = np.arange(0,len(thetas))
-    
+
     #1. Get the names of reads from headers and dates
     list_headers = os.listdir(headers_dir)
     headers = []
@@ -128,7 +125,7 @@ for folder in binnings:
         if file.startswith("header"):
             headers.append(file)
     headers.sort()
-    
+
     # Get the mean date of bin from the sequences
     mean_header_bin = []
     # List of dates that have sequences in the bin
@@ -156,14 +153,7 @@ for folder in binnings:
             mean_header_bin.append(str(mean)[:10])
             times.append(i)
             i+=1
-    
-#    print("     1. Dates with sequences in bins")
-#    print(dates_per_bin)
-#    
-#    print("\n")
-#    print("     2. Mean bin dates")
-#    print(mean_header_bin)
-    # 1) Get the number of cases on the mean date
+
     cases_on_mean_date = []
     for i, date in enumerate(mean_header_bin):
         if date in dates_nt:
@@ -185,11 +175,51 @@ for folder in binnings:
                 cases_on_all_dates_in_seqbin_tosum.append(0)
         cases_on_all_dates_in_seqbin.append(sum(cases_on_all_dates_in_seqbin_tosum))
         
-    # 3) Get the number of cases on theoretical mean date
+
+    # PLots for different variables and outcomes of individual binnings
+    # a) Bin sizes bar plot
+    plot_title = "Bin sizes for %s" % folder
+    fig, ax1 = plt.subplots()
+    ax1.set_title("%s" % plot_title)
+    ax1.set_xlabel('Mean bin date')
+    ax1.set_ylabel("Bin size", color='crimson')
+    ax1.bar(mean_header_bin, num_seqs, color='crimson')
+    ax1.tick_params(axis='y', labelcolor='crimson')
+    ax1.set_xticks(mean_header_bin[::10])
+    ax1.set_xticklabels(mean_header_bin[::10])
+    fig.tight_layout()
+    name = str(out_dir)+"/plot_"+folder+"_bin_sizes.png"
+    fig.savefig(str(name),dpi=300)
+    plt.clf()
     
+    # b) Number of origins vs number of mutants
+    plot_title = "Origins and mutants for %s" % folder
+    fig, ax1 = plt.subplots()
+    ax1.set_title("%s" % plot_title)
+    ax1.plot(mean_header_bin, origins, '-', color='green', label="Origins")
+    ax1.plot(mean_header_bin, num_mut, 'o', color='blue', label="Number of mutants")
+    ax1.set_xlabel('Mean bin date')
+    ax1.set_ylabel('Count')
+    ax1.set_xticks(mean_header_bin[::10])
+    ax1.set_xticklabels(mean_header_bin[::10])
+    ax1.legend()
+    name = str(out_dir)+"/plot_"+folder+"_originsvsmut.png"
+    fig.savefig(str(name),dpi=300)
+    plt.clf()
     
+    # c) Theta estimates normalized by time delta
+    plot_title = "Population size estimate %s" % folder
+    fig, ax1 = plt.subplots()
+    ax1.set_title("%s" % plot_title)
+    ax1.plot(mean_header_bin, np.array(thetas)/np.array(num_days_per_bin), '-', color='royalblue')
+    ax1.set_xlabel('Mean bin date')
+    ax1.set_ylabel(r'$\frac{\theta_{est}}{\Delta_{t}}$')
+    ax1.set_xticks(mean_header_bin[::10])
+    ax1.set_xticklabels(mean_header_bin[::10])
+    name = str(out_dir)+"/plot_"+folder+"_thetas.png"
+    fig.savefig(str(name),dpi=300)
+    fig.clf()
     
-    # 4) Get the total number of cases on theoretical bin
     
     
     # Write bin file
@@ -203,8 +233,11 @@ for folder in binnings:
             writer.writerow([mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]])
 
     # Write to merged bins dataset
+    #if (folder.startswith("eq_days")):
     for i, date in enumerate(mean_header_bin):
-        bin_merging_data.append((mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]))
+        if not (folder.startswith("fuzzy")):
+            if not i+1 == len(mean_header_bin):
+                bin_merging_data.append((mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]))
 
 
 # Make merged dataset sorted by date
@@ -248,7 +281,8 @@ with open(table_path, 'w+', newline='') as csvfile:
     for i in range(len(times)):
         print(i)
         # If bin size==1/variance is bigger or equal to min_bin_size
-        if variance_sizem[i]<=1/int(min_bin_size) and num_days_per_binm[i]>=min_days_span:
+        #if maxsize, minsize satisfied 
+        if variance_sizem[i]<=1/int(min_bin_size) and num_days_per_binm[i]>=min_days_span and num_days_per_binm[i]<=max_days_span:
             writer.writerow([times[i],thetasm[i]/(num_days_per_binm[i]+1),thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i]])
         
 
