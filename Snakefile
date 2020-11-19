@@ -137,7 +137,7 @@ rule map:
 		"logs/map_{sample}{sm}.log"
 	shell:
 		#"bwa mem -t 4  {input.ref} {input.s} > {output.sam} 2> {log}"
-		"bwa mem -t 4 -O 20 -E 0 {input.ref} {input.s} | samtools view -Sb > {output} 2> {log}"
+		"bwa mem -t 4 -O 20 -E 0 {input.ref} {input.s} | samtools view -Sb > -F 0x900 {output} 2> {log}"
 
 rule sort_bam:
 	input:
