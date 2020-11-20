@@ -26,8 +26,6 @@ min_days_span: 3
 max_days_span: 21
 # Date when e.g. lockdown measures came into place - for plots
 date_m: 2020-03-22
-# path to JAR-file
-samfixcigars: ""
 # Reported cases full path
 rep_cases_full: "path/to/rep_cases"
 # Country name for plot grouping
