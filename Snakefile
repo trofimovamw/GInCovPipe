@@ -37,6 +37,7 @@ for name in config["days_per_bin"]:
 	binnings_names.append(s2)
 binnings_names.append("cal_week")
 
+report: "report/workflow.rst"
 
 rule all:
 	input:
@@ -79,21 +80,6 @@ if config["samples"] != "":
 		shell:
 			"reformat.sh in={input} out={output} underscore ignorejunk overwrite=true 2> {log}"
 
-rule bwa_index:
-	input:
-		expand("consensus/{reference}.fasta", reference=config["consensus"])
-	output:
-		expand("consensus/{reference}.fasta.ann", reference=config["consensus"])
-	shell:
-		"bwa index {input}"
-
-rule samtools_dict:
-	input:
-		expand("consensus/{reference}.fasta", reference=config["consensus"])
-	output:
-		expand("consensus/{reference}.dict", reference=config["consensus"])
-	shell:
-		"samtools dict {input} -o {output}"
 
 rule samtools_faidx:
 	input:
@@ -124,20 +110,37 @@ rule replace_dashes:
 	shell:
 		"seqkit replace -s -p '-' -r 'N' {input} -o {output} 2> {log}"
 
-rule map:
+rule samtools_dict:
 	input:
-		ref = expand("consensus/{reference}.fasta", reference=config["consensus"]),
-		index = expand("consensus/{reference}.fasta.ann", reference=config["consensus"]),
+		expand("consensus/{reference}.fasta", reference=config["consensus"])
+	output:
+		expand("consensus/{reference}.dict", reference=config["consensus"])
+	shell:
+		"samtools dict {input} -o {output}"
+
+
+rule minimap_index_ref:
+	input:
+		expand("consensus/{reference}.fasta", reference=config["consensus"])
+	output:
+		expand("consensus/{reference}.mmi", reference=config["consensus"])
+	conda:
+		"env/env.yml"
+	shell:
+		"minimap2 -d {output} {input}"
+
+rule minimap:
+	input:
+		ref = expand("consensus/{reference}.mmi", reference=config["consensus"]),
 		s = "results/raw/{sample}{sm}_fixed12.fasta"
 	output:
-		sam = "results/bam/{sample}{sm}.bam"
+		"results/bam/{sample}{sm}.bam"
 	conda:
 		"env/env.yml"
 	log:
 		"logs/map_{sample}{sm}.log"
 	shell:
-		#"bwa mem -t 4  {input.ref} {input.s} > {output.sam} 2> {log}"
-		"bwa mem -t 4 -O 20 -E 0 {input.ref} {input.s} | samtools view -Sb > -F 0x900 {output} 2> {log}"
+		"minimap2 -a --eqx {input.ref} {input.s} | samtools view -Sb -F 0x900 > {output} 2> {log}"
 
 rule sort_bam:
 	input:
@@ -163,26 +166,11 @@ rule index_bam:
 	shell:
 		"samtools index {input} 2> {log}"
 
-rule fix_cigars_subprocess:
-	input:
-		bam = "results/bam/{sample}{sm}-sorted.bam",
-		bai = "results/bam/{sample}{sm}-sorted.bam.bai",
-		dict = expand("consensus/{reference}.dict", reference=config["consensus"]),
-		fai = expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
-	params:
-		java_tool = config["samfixcigars"],
-		ref = config["consensus"]
-	output:
-		bam = "results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam",
-		bai = "results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam.bai"
-
-	script:
-		"scripts/binning/fix_cigars_subprocess.py"
 
 rule run_binning:
 	input:
-		bam = expand("results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam", sample=config["samples"], sm=config["samples_meta"]),
-		bai = expand("results/fixed_cigars_bam/{sample}{sm}-sorted-fixcigar.bam.bai", sample=config["samples"], sm=config["samples_meta"])
+		bam = expand("results/bam/{sample}{sm}-sorted.bam", sample=config["samples"], sm=config["samples_meta"]),
+		bai = expand("results/bam/{sample}{sm}-sorted.bam.bai", sample=config["samples"], sm=config["samples_meta"])
 	output:
 		files_list = "results/bins/list_of_binnings.tsv",
 		meta = "results/meta/meta_dates.tsv"
