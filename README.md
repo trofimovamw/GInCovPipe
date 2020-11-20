@@ -133,15 +133,7 @@ number_per_bin: [20, 30]
 days_per_bin: [7, 10, 30]
 ```
 
-#### 2.5 Path to SamFixCigars:
-
-Because the SamFixCigars package was installed separately and it is not available via Conda (?), include path to the SamFixCigars .jar file:
-
-```
-samfixcigars: ".../path/to/samfixcigar.jar"
-```
-
-#### 2.6 Metric Parameters
+#### 2.5 Metric Parameters
 
 You should also specify minimal size of bin used for spline computation, and whether smoothing of cases reports data and log transformation of theta estimates is desired in [`config.yaml`](./config.yaml):
 
