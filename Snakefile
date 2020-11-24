@@ -198,6 +198,8 @@ rule theta_estimates:
 		min_days_span = config["min_days_span"],
 		max_days_span = config["max_days_span"],
 		meta = config["samples"]
+	conda:
+		"env/env.yml"
 	script:
 		"scripts/metrics/run_fp.py"
 
@@ -207,6 +209,8 @@ rule splines:
 	params:
 		rep_cases = config["rep_cases_full"],
 		group = config["group"]
+	conda:
+		"env/env.yml"
 	output:
 		result = "results/splines/out_spline.pdf",
 		abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
