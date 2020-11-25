@@ -105,19 +105,21 @@ for folder in binnings:
 
     seq_dict_int = []
     print("Doing folder ",folder)
+    print("      Starting to record mutant positions from CIGAR strings...")
     for filename in files:
         path = binnings_dir+'/'+filename
         sam_to_fp = SAMtoFP(path)
         seq_lbase, seq_posbase = sam_to_fp.writeFP()
         seq_list_base_complete.append(seq_lbase)
         seq_list_pos_complete.append(seq_posbase)
-
-
+    print("      Done.\n")
+    print("      Starting to compute optimal metric parameters...")
     #Theta from origins - MLE
     analyze = analyzeTrajectory(seq_list_base_complete, '')
     thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
     weeks = np.arange(0,len(thetas))
-
+    print("      Done.\n")
+    print("      Starting to write tables and making complementary plots...")
     #1. Get the names of reads from headers and dates
     list_headers = os.listdir(headers_dir)
     headers = []
@@ -231,7 +233,7 @@ for folder in binnings:
         writer.writerow(["date","value","variance_size","variance_mle","num_seqs","times","cases_on_mean_date","cases_on_all_dates_in_seqbin","num_days_per_bin"])
         for i in range(len(weeks)):
             writer.writerow([mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]])
-
+    print("      Done.\n")
     # Write to merged bins dataset
     for i, date in enumerate(mean_header_bin):
         if not (folder.startswith("fuzzy")):
@@ -268,7 +270,7 @@ for i, mbin in enumerate(bin_merging_data_):
     num_days_per_binm.append(mbin[8])
 
 
-    
+print("\nMaking the final results table...")
 name_table = "table_merged_thetas_var_from_size.tsv"
 
 table_path = str(out_dir) + '/' + name_table
@@ -278,10 +280,9 @@ with open(table_path, 'w+', newline='') as csvfile:
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(["t","value","value_nonorm","variance","trueN","meanBinDate","sampleSize"])
     for i in range(len(times)):
-        print(i)
         # If bin size==1/variance is bigger or equal to min_bin_size
         #if maxsize, minsize satisfied 
         if variance_sizem[i]<=1/int(min_bin_size) and num_days_per_binm[i]>=min_days_span and num_days_per_binm[i]<=max_days_span:
             writer.writerow([times[i],thetasm[i]/(num_days_per_binm[i]+1),thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i]])
         
-
+print("Done.\n")

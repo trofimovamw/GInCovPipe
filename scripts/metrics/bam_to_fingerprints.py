@@ -93,7 +93,6 @@ class SAMtoFP:
             start = start_[0]
             # Trim with cigar string
             cigar = read.cigartuples
-            print(cigar)
             
             mutants_string, mutants_pos = self._cigarToFP(seq, cigar, start, name)
 
