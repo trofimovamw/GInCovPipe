@@ -233,6 +233,7 @@ for folder in binnings:
             writer.writerow([mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]])
 
     # Write to merged bins dataset
+    #if (folder.startswith("eq_days")):
     for i, date in enumerate(mean_header_bin):
         if not (folder.startswith("fuzzy")):
             if not i+1 == len(mean_header_bin):
