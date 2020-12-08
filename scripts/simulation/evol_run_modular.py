@@ -20,11 +20,11 @@ import math
 
 from pathlib import Path
 
-from generate_evol_bins import generateEvolPoiss
+from generate_evol_bins_gillespie import generateEvolGill
 
 from modular_theta_est_mle import analyzeTrajectory
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 import matplotlib.pyplot as plt
 
@@ -34,10 +34,11 @@ FILEPATH = Path(__file__).parent
 LEN_SEQ = 300 
 NUM_SEQ_INIT = 101
 P_MUT = 0.0001
-P_REPL=1.1
-T_FINAL = 200
+P_REPL=1.15
+T_FINAL = 10
 SIM_ORDER = 20
 TOTAL_SIM = 1
+SAMPLING_RATE = 0.2
 # all bin sizes 2 to N_BIN (by 2) are evaluated
 N_BIN = 2
 # zero, if there should be no change of growth rate, otherwise something like 0.49
@@ -53,7 +54,7 @@ SUBSAMPLE = 0.0
 
 INIT_SEQ = "ACGACACGACACCAATTTAGATTTAGACCATTAGCACAAGACCGTAAAACGTCGCT"
 
-DAY0 = datetime.fromisoformat("2020-01-01")
+DAY0 = date.fromisoformat("2020-01-01")
 
 # casting a string to boolean
 def str_to_bool(s):
@@ -119,12 +120,14 @@ if (len(sys.argv) <= 16):
     OUTDIR = FILEPATH / sim_folder
     
     time_delta = 7
+    p_death = P_REPL-0.2
     # If no change of replication rate is wanted, set p_repl2 to 0
     # If no particular initial sequence is wanted, set init_seq to 'None'
-    evol_run = generateEvolPoiss(length=LEN_SEQ,
+    evol_run = generateEvolGill(length=LEN_SEQ,
                                  p_repl=P_REPL,
                                  p_repl2=P_REPL2,
                                  p_mut=P_MUT,
+                                 p_death = p_death,
                                  N=NUM_SEQ_INIT,
                                  t_start=0,
                                  t_final=T_FINAL,
@@ -132,10 +135,23 @@ if (len(sys.argv) <= 16):
                                  out=OUTDIR,
                                  sim=SIM_ORDER,
                                  total_sim=TOTAL_SIM,
-                                 time_delta=time_delta,
-                                 init_seq=INIT_SEQ)
-    trajectory, initSeq = evol_run.mutate()
-
+                                 #time_delta=time_delta,
+                                 init_seq='none')
+    # Sampling on tips only
+    trajectory, time_trajectory, initSeq, tipsList = evol_run.mutate()
+    # Bin sampled tips
+    # Bin the tips
+    # Sizes of each sampled tip set
+    sampling_sizes = [len(s) for s in tipsList]
+    # Prefered binning
+    NUM_BINS = 2
+    binsize = math.ceil(sum(sampling_sizes)/NUM_BINS)
+    # Make bins of equal size
+    bins = [[] for i in range(NUM_BINS)]
+    sampling_merged = [j for i in tipsList for j in i]
+    for i in range(len(sampling_merged)):
+        bins[math.floor(i / binsize)].append(sampling_merged[i])
+        
     timestepd = OUTDIR.parent
 
     p_out = "python_out_p_repl_" + str(P_REPL) + "_repl2_" + str(P_REPL2) + "_p_mut_" + str(
@@ -196,7 +212,7 @@ if (len(sys.argv) <= 16):
         """
         Analyze without subsampling
         """
-        days_since1_intro, thetas1_intro, variance1_intro, num_seqs1_intro, origins1_intro = analyze_run_intro.analyzeBinsNS()
+        days_since1_intro, thetas1_intro, variance1_intro, num_seqs1_intro, origins1_intro, wattersonEst, avrgSegrSites = analyze_run_intro.analyzeBinsNS()
         n1 = "NS_theta_origins_sim_" + str(SIM_ORDER) + "_intro_" + str(NUM_INTRO) + ".tsv"
         name = t / n1
         with open(str(name), 'w+', newline='') as csvfile:
@@ -253,7 +269,7 @@ if (len(sys.argv) <= 16):
         Analyze without subsampling
         """
         print("Analyze without subsampling")
-        days_since1, thetas1, variance1, num_seqs1, origins1 = analyze_run.analyzeBinsNS()
+        days_since1, thetas1, variance1, num_seqs1, origins1, wattersonEst1, avrgSegrSites1 = analyze_run.analyzeBinsNS()
 
         n1 = "NS_theta_origins_sim_"+str(SIM_ORDER)+".tsv"
         name = t / n1
