@@ -35,7 +35,7 @@ LEN_SEQ = 300
 NUM_SEQ_INIT = 101
 P_MUT = 0.0001
 P_REPL=1.15
-T_FINAL = 10
+T_FINAL = 3
 SIM_ORDER = 20
 TOTAL_SIM = 1
 SAMPLING_RATE = 0.2
@@ -138,20 +138,20 @@ if (len(sys.argv) <= 16):
                                  #time_delta=time_delta,
                                  init_seq='none')
     # Sampling on tips only
-    trajectory, time_trajectory, initSeq, tipsList = evol_run.mutate()
+    trajectory_indiv, time_trajectory, initSeq, tipsList = evol_run.mutate()
     # Bin sampled tips
-    # Bin the tips
     # Sizes of each sampled tip set
     sampling_sizes = [len(s) for s in tipsList]
     # Prefered binning
-    NUM_BINS = 2
+    NUM_BINS = 20
     binsize = math.ceil(sum(sampling_sizes)/NUM_BINS)
     # Make bins of equal size
     bins = [[] for i in range(NUM_BINS)]
     sampling_merged = [j for i in tipsList for j in i]
     for i in range(len(sampling_merged)):
         bins[math.floor(i / binsize)].append(sampling_merged[i])
-        
+    # Binned trajectory
+    trajectory = bins
     timestepd = OUTDIR.parent
 
     p_out = "python_out_p_repl_" + str(P_REPL) + "_repl2_" + str(P_REPL2) + "_p_mut_" + str(
@@ -184,22 +184,36 @@ if (len(sys.argv) <= 16):
             #n_intro=50
             if T_SWITCH_ORIG:
                 t_switch = evol_run.t_switch
-            evol_intro = generateEvolPoiss(length=LEN_SEQ,
-                                         p_repl=P_REPL,
-                                         p_repl2=INTRO_REPL2,
-                                         p_mut=P_MUT,
-                                         N=n_intro,
-                                         t_start=t_start,
-                                         t_final=T_FINAL,
-                                         t_switch=t_switch,
-                                         out=OUTDIR,
-                                         sim=SIM_ORDER,
-                                         total_sim=TOTAL_SIM,
-                                         time_delta=time_delta,
-                                         init_seq=intro_sequence)
-            trajectory_intro, initSeq_intro = evol_intro.mutate()
+            
+            evol_run = generateEvolGill(length=LEN_SEQ,
+                                 p_repl=P_REPL,
+                                 p_repl2=P_REPL2,
+                                 p_mut=P_MUT,
+                                 p_death = p_death,
+                                 N=NUM_SEQ_INIT,
+                                 t_start=0,
+                                 t_final=T_FINAL,
+                                 t_switch=math.floor(T_FINAL/2),
+                                 out=OUTDIR,
+                                 sim=SIM_ORDER,
+                                 total_sim=TOTAL_SIM,
+                                 #time_delta=time_delta,
+                                 init_seq=intro_sequence)
+            trajectory_intro, time_trajectory_intro, initSeq_intro, tipsList_intro  = evol_intro.mutate()
+            # Bin sampled tips
+            # Sizes of each sampled tip set
+            sampling_sizes = [len(s) for s in tipsList_intro]
+            # Prefered binning
+            NUM_BINS = 20
+            binsize = math.ceil(sum(sampling_sizes)/NUM_BINS)
+            # Make bins of equal size
+            bins = [[] for i in range(NUM_BINS)]
+            sampling_merged = [j for i in tipsList for j in i]
+            for i in range(len(sampling_merged)):
+                bins[math.floor(i / binsize)].append(sampling_merged[i])
+            # Binned trajectory
             numIntros[t_start] += 1
-
+            trajectory_intro = bins
             print(" t ", t_start)
             for i in range(len(trajectory_intro)) :
                 trajectory_withIntroduction[t_start+i].extend(trajectory_intro[i])

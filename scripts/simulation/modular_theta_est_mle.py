@@ -109,6 +109,28 @@ class analyzeTrajectory:
             x0 = 1
             sol = optimize.minimize(self._fmle, x0=x0, method='trust-constr', args=(nu,ns), constraints=con1)
             return sol.x[0]
+        
+
+    def _pairwiseDiff(self,seqs):
+
+        n = len(seqs)
+        matrix = np.zeros((n,n))
+    
+        for i, seq1 in enumerate(seqs):
+            for j, seq2 in enumerate(seqs):
+                if j >= i:
+                    break 
+                else:
+                    diff = sum(seqx != seqy for seqx, seqy in zip(seq1,seq2))
+                    matrix[i, j] = diff
+                    #matrix[j, i] = diff
+        return matrix
+    
+    def _nminusOneHarm(self,n):
+        harm = 1.00
+        for i in range(1, n): 
+            harm += 1 / i
+        return harm 
     
     """
     Analyze - no subsampling
@@ -122,6 +144,9 @@ class analyzeTrajectory:
         
         #Length of evolution 
         traj_length = len(self.trajectory)
+        # ThetaWs
+        thetaWs = []
+        avrgSegrSites = []
 
         # Filling the mutants dict and presence array
         for t, seqSet in enumerate(self.trajectory):
@@ -135,8 +160,27 @@ class analyzeTrajectory:
                         times[t] = 1
                         mutSeqDict[seqSet[i]] = times
             num_mut.append(mut_count)
-
             
+            # Number of pairwise differences
+            #print(seqSet)
+            diff_matrix = self._pairwiseDiff(seqSet)
+            # Average nummber of pairwise differences
+            avrgDiff = np.sum(diff_matrix)/(((len(seqSet)**2)-len(seqSet))/2)
+            
+            segrSites = []
+            for i in range(len(seqSet)):
+                for j in range(len(seqSet[i])):
+                    if self.initSeq[j]!=seqSet[i][j]:
+                        if j not in segrSites:
+                            segrSites.append(j)
+            # n-1th harmonic number
+            harm = self._nminusOneHarm(len(seqSet))
+            # Watterson est.
+            thetaW = len(segrSites)/harm
+            thetaWs.append(thetaW)
+            avrgSegrSites.append(avrgDiff)
+
+        mutant_proportion = sum(num_mut)/sum(num_seqs)
         origins = self._makeOrigins(mutSeqDict, num_mut)
         '''
         Estimate effective population size from data 
@@ -150,7 +194,7 @@ class analyzeTrajectory:
         #variance.append(1)
         
         for i in range(1,len(origins)):
-            sol = self._optimize(origins[i], num_mut[i])
+            sol = self._optimize(origins[i], mutant_proportion*num_seqs[i])
             thetas.append(sol)
 
         days_since = np.zeros(len(thetas))
@@ -167,7 +211,7 @@ class analyzeTrajectory:
         #     else:
         #         variance.append(1)
         
-        return days_since, thetas, variance, num_seqs, origins
+        return days_since, thetas, variance, num_seqs, origins, thetaWs, avrgSegrSites
     
     """
     Analyze - with subsampling
@@ -218,7 +262,7 @@ class analyzeTrajectory:
             else:
                 break
 
-            
+        mutant_proportion = sum(num_mut)/sum(num_seqs)
         origins = self._makeOrigins(mutSeqDict, num_mut)
         '''
         Estimate effective population size from data 
@@ -228,7 +272,7 @@ class analyzeTrajectory:
         thetas.append(0)
         
         for i in range(1,len(origins)):
-            sol = self._optimize(origins[i], num_mut[i])
+            sol = self._optimize(origins[i], mutant_proportion*num_seqs[i])
             thetas.append(sol)
 
         days_since = np.zeros(len(thetas))
@@ -296,7 +340,7 @@ class analyzeTrajectory:
             else:
                 break
 
-            
+        mutant_proportion = sum(num_mut)/sum(num_seqs)
         origins = self._makeOrigins(mutSeqDict, num_mut)
         '''
         Estimate effective population size from data 
@@ -306,7 +350,7 @@ class analyzeTrajectory:
         thetas.append(0)
         
         for i in range(1,len(origins)):
-            sol = self._optimize(origins[i], num_mut[i])
+            sol = self._optimize(origins[i], mutant_proportion*num_seqs[i])
             thetas.append(sol)
 
         days_since = np.zeros(len(thetas))
@@ -384,18 +428,18 @@ class analyzeTrajectory:
 
             num_mut.append(mut_count)
 
-            
+        mutant_proportion = sum(num_mut)/sum(num_seqs)
         origins = self._makeOrigins(mutSeqDict, num_mut)
         '''
         Estimate effective population size from data 
         '''
         thetas = []
         # For the initial generation
-        #Variance
+        # Variance
         variance = []
         
         for i in range(len(origins)):
-            sol = self._optimize(origins[i], num_mut[i])
+            sol = self._optimize(origins[i], mutant_proportion*num_seqs[i])
             # normalise by bin size
             thetas.append(sol / bin_sizes[i])
             variance.append(1/num_seqs[i])
@@ -503,7 +547,7 @@ class analyzeTrajectory:
             else:
                 break
 
-
+        mutant_proportion = sum(num_mut)/sum(num_seqs)
         origins = self._makeOrigins(mutSeqDict, num_mut)
         '''
         Estimate effective population size from data 
@@ -511,7 +555,7 @@ class analyzeTrajectory:
         thetas = []
         
         for i in range(len(origins)):
-            sol = self._optimize(origins[i], num_mut[i])
+            sol = self._optimize(origins[i], mutant_proportion*num_seqs[i])
             #normalise by bin size
             thetas.append(sol/bin_sizes[i])
 
