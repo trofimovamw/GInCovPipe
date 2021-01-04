@@ -5,9 +5,7 @@ Created on Sat Nov 28 11:49:09 2020
 
 @author: mariatrofimova
 """
-
-
-from random import choice, choices
+from random import choice
 import numpy as np
 import csv
 import os
@@ -30,8 +28,8 @@ class generateEvolGill:
         self.p_death = p_death
         self.p_mut = p_mut
         self.N = N
-        self.init = self._initSet(init_seq)
-        self.initB = self._initSetB()
+        self.init = self._initSetID(init_seq)
+        self.initNoID = self._initSet(init_seq)
         self.t_start = t_start
         self.t_final = t_final
         self.t_switch = t_switch
@@ -39,6 +37,28 @@ class generateEvolGill:
         self.sim = sim
         self.total_sim = total_sim
     
+    def _initSetID(self,init_seq):
+        '''
+        Create initial sequence, if parameter is None, or use predefined initial sequence
+        '''
+        if init_seq=='none':
+            alphabet = 'ACGT'
+            sequences = []
+            seq = ''.join(choice(alphabet) for i in range(self.length))
+            sequences = [seq] * self.N
+            #labels = np.arange(0,len(sequences))
+            init = []
+            for i in range(len(sequences)):
+                init.append((i,sequences[i]))
+            return init
+        else:
+            sequences = [init_seq] * self.N
+            #labels = np.arange(0,len(sequences))
+            init = []
+            for i in range(len(sequences)):
+                init.append((i,sequences[i]))
+            return init
+        
     def _initSet(self,init_seq):
         '''
         Create initial sequence, if parameter is None, or use predefined initial sequence
@@ -145,20 +165,36 @@ class generateEvolGill:
             for i in range(len(init)):
                 writer.writerow([">alignment_"+str(i)+'_'+str(curr_time.strftime("%Y-%m-%d"))])
                 writer.writerow([init[i]])
+                
+    def initReplRates(self,initlen):
+        return np.full(initlen,self.p_repl)
 
-
-    def mutate(self):
+    def mutateID(self):
         '''
         Mutate initial sequence set over the course of t generations
         '''
         init = self.init
         print(init)
         initSeq = init[0]
+        prefRep = False
+        repl_rates = self.initReplRates(len(init))
+        # If some mutants have better fitness
+        if prefRep == True:
+            pick_pref = random.choices(np.arange(0,len(init)), weights=np.full(len(init), 1/len(init)),k=3)
+            for i in pick_pref:
+                repl_rates[i] = repl_rates[i] + 0.03
+        print("Replication rates: ",repl_rates)
         t = self.t_start
         time_steps = []
         time_steps.append(init)
-        # Fake date to start with
         L = self.length
+        # Propensities of sites to mutate
+        mut_prop_per_seq = list(np.full(L,1/(L+3)))
+        # Some sites should be more likely
+#        incr_weight = (1-sum(mut_prop_per_seq))/3
+#        mut_prop_per_seq[math.floor(0.3*L)] = mut_prop_per_seq[math.floor(0.3*L)]+incr_weight
+#        mut_prop_per_seq[math.floor(0.6*L)] = mut_prop_per_seq[math.floor(0.6*L)]+incr_weight
+#        mut_prop_per_seq[math.floor(0.9*L)] = mut_prop_per_seq[math.floor(0.9*L)]+incr_weight     
 
         # Create folder for the simulation
 #        sim_name = self.sim
@@ -172,15 +208,31 @@ class generateEvolGill:
         tipsList = []
 
         curr_p_repl = self.p_repl
-        print("Simulate until: ",self.t_final)
+        benchmark = 0
+        step = 1
+        
+        # Keep track of recurrent mutants
+        rec_mutants = dict()
 
         while t<self.t_final:
-            print("Current time T = ",t)
+            if t>=benchmark:
+                print("Cureent time t: ",t)
+                #print("Replication rates: ", repl_rates)
+                benchmark = benchmark+step
+                print("Recording trajectory snapshot...")
+                trajectory.append(init)
+            #print("Current time T = ",t)
             # Switch the replication rate somewhere in the middle if that is the correct mode (p_repl2!=0)
-            if (self.p_repl2!=0) and (t>=self.t_switch):
+            if (self.p_repl2!=0) and (t>=self.t_switch) and (curr_p_repl!=self.p_repl2):
+                print("Switching replication rate")
                 curr_p_repl = self.p_repl2
+                #new_repl_rates = np.full(len(repl_rates),curr_p_repl)
+                repl_rates = repl_rates-0.2
+            
+            #print("Size of init: ",len(init))
+            #print("Size of replication rates: ",len(repl_rates))
                 
-            r_repl = curr_p_repl*len(init)
+            r_repl = sum(repl_rates)
             #print("Replication rate: ",r_repl)
             r_death = self.p_death*len(init)
             #print("Death rate: ",r_death)
@@ -214,31 +266,51 @@ class generateEvolGill:
             if repl_event == True:
                 #print("  Picked replication event")
                 # Pick sequences to replicate with a certain probability - by index
-                pick_ind = random.choices(np.arange(0,len(init)), weights=np.full(len(init), curr_p_repl/r_repl),k=math.ceil(len(init)*(curr_p_repl/r_repl)))
+                #pick_ind = random.choices(np.arange(0,len(init)), weights=np.full(len(init), curr_p_repl/r_repl),k=math.ceil(len(init)*(curr_p_repl/r_repl)))
+                pick_ind = random.choices( np.arange(0,len(init)), weights=repl_rates, k=1)
                 #print("Sequences to replicate: ",pick_ind)
                 # Initialize mutated sites
-                num_mut_sites = len(pick_ind)*L + 1
-                while num_mut_sites >= len(pick_ind)*L:
-                    num_mut_sites = np.random.poisson(self.p_mut*len(pick_ind)*L)
+                num_mut_sites = len(pick_ind)*L*2 + 1
+                while num_mut_sites >= len(pick_ind)*L*2:
+                    num_mut_sites = np.random.poisson(self.p_mut*len(pick_ind)*L*2)
                 #print("                Number of mutated sites: ",num_mut_sites)
-                ind_mut_sites = np.arange(0,len(pick_ind)*L)
-                mut_sites = random.sample(ind_mut_sites.tolist(),num_mut_sites)
+                ind_mut_sites = np.arange(0,len(pick_ind)*L*2)
+                mut_sites = random.choices(ind_mut_sites.tolist(),weights=mut_prop_per_seq*2,k=num_mut_sites)
+                #print("Mutating sites: ",mut_sites)
                 
                 pick_children = []
+                
                 for ind in pick_ind:
                     pick_children.append(init[ind])
                     pick_children.append(init[ind])
-                
+                    repl_rates = np.append(repl_rates,repl_rates[ind])
+                    repl_rates = np.append(repl_rates,repl_rates[ind])
+                #List sequence identities in init
+                identities = []
+                for seq in init:
+                    identities.append(seq[0])
+                maxIdent = max(identities)
                 if num_mut_sites > 0:
                     for i in mut_sites:
                         seq_ind = math.floor(i/L)
                         seq_pos = i % L
-                        seq = list(pick_children[seq_ind])
+                        seq = list(pick_children[seq_ind][1])
+                        
+                        if (seq_pos in rec_mutants.keys()) and (seq[seq_pos]==initSeq[1][seq_pos]):
+                            # If it is a recurrent mutant, assign a new sequence identity
+                            rec_mutants[seq_pos].append(t)
+                            pick_children[seq_ind] = (maxIdent+1,pick_children[seq_ind][1])
+                            maxIdent = maxIdent+1
+                        else:
+                            rec_mutants[seq_pos] = [t]
+        
+                        #print(seq)
                         #seq[seq_pos] = self._mutateBase(new_set[seq_ind][seq_pos],initSeq[seq_pos])
-                        seq[seq_pos] = self._mutateBasenorm(pick_children[seq_ind][seq_pos])
+                        seq[seq_pos] = self._mutateBasenorm(seq[seq_pos],initSeq[1][seq_pos])
+                        
                         #print("                       Mutated site: ",seq_pos)
                         s = "".join(seq)
-                        pick_children[seq_ind] = s
+                        pick_children[seq_ind] = (pick_children[seq_ind][0],s)
                 # If birth event - no tips available
                 tipsList.append([])
                 # Append children to init
@@ -252,25 +324,209 @@ class generateEvolGill:
                 pick_ind = random.choices(np.arange(0,len(init)), weights=np.full(len(init), self.p_death/r_death), k=math.ceil(len(init)*(self.p_death/r_death)))
                 
                 new_init = []
+                new_repl = []
                 for idx in range(len(init)):
                     if idx in pick_ind:
                         pick.append(init[idx])
                     else:
                         new_init.append(init[idx])
-                init = new_init
+                        new_repl.append(repl_rates[idx])
+                init = copy.deepcopy(new_init)
+                repl_rates = copy.deepcopy(np.array(new_repl))
                 #print("   New init size: ",len(init))
                 tipsList.append(pick)
                 
             # Add to trajectory
-            new_set = copy.copy(init)
-            trajectory.append(new_set)
+            new_set = copy.deepcopy(init)
+            #trajectory.append(new_set)
             t = t + delta_t
             time_trajectory.append(t)
             
-            if not new_set:
+            if len(new_set)==0:
                 break
+        print(rec_mutants)
+        return trajectory, time_trajectory, initSeq, tipsList, rec_mutants
+    
+    def mutate(self):
+        '''
+        Mutate initial sequence set over the course of t generations
+        '''
+        init = self.initNoID
+        print(init)
+        prefRep = True
+        repl_rates = self.initReplRates(len(init))
+        # If some mutants have better fitness
+        if prefRep == True:
+            pick_pref = random.choices(np.arange(0,len(init)), weights=np.full(len(init), 1/len(init)),k=3)
+            for i in pick_pref:
+                repl_rates[i] = repl_rates[i] + 0.1
+        print("Replication rates: ",repl_rates)
+        initSeq = init[0]
+        t = self.t_start
+        time_steps = []
+        time_steps.append(init)
+        L = self.length
+        # Propensities of sites to mutate
+        mut_prop_per_seq = list(np.full(L,1/(L+3)))
+        # Some sites should be more likely
+        #incr_weight = (1-sum(mut_prop_per_seq))/3
+        #mut_prop_per_seq[math.floor(0.3*L)] = mut_prop_per_seq[math.floor(0.3*L)]+incr_weight
+        #mut_prop_per_seq[math.floor(0.6*L)] = mut_prop_per_seq[math.floor(0.6*L)]+incr_weight
+        #mut_prop_per_seq[math.floor(0.9*L)] = mut_prop_per_seq[math.floor(0.9*L)]+incr_weight        
 
-        return trajectory, time_trajectory, initSeq, tipsList
+        # Create folder for the simulation
+#        sim_name = self.sim
+#        tot_sim_order = len(str(self.total_sim))
+#        diff_sim_atot = len(str(self.sim))
+#        n_zero = tot_sim_order-diff_sim_atot
+#        zeros = "0" * n_zero
+        mutated_positions = []
+
+        trajectory = []
+        time_trajectory = []
+        tipsList = []
+
+        curr_p_repl = self.p_repl
+        benchmark = 0
+        step = 1
+        
+        # Keep track of recurrent mutants
+        rec_mutants = dict()
+
+        while t<self.t_final:
+            if t>=benchmark:
+                print("Cureent time t: ",t)
+                #print("Replication rates: ", repl_rates)
+                benchmark = benchmark+step
+                print("Recording trajectory snapshot...")
+                trajectory.append(init)
+            #print("Current time T = ",t)
+            # Switch the replication rate somewhere in the middle if that is the correct mode (p_repl2!=0)
+            if (self.p_repl2!=0) and (t>=self.t_switch) and (curr_p_repl!=self.p_repl2):
+                print("Switching replication rate")
+                curr_p_repl = self.p_repl2
+                #new_repl_rates = np.full(len(repl_rates),curr_p_repl)
+                repl_rates = repl_rates-0.1
+#            if (self.p_repl!=0) and (t>=self.t_switch*1.5) and (curr_p_repl!=self.p_repl):
+#                print("Switching replication rate back")
+#                curr_p_repl = self.p_repl
+#                #new_repl_rates = np.full(len(repl_rates),curr_p_repl)
+#                repl_rates = repl_rates+0.2
+            #print("Size of init: ",len(init))
+            #print("Size of replication rates: ",len(repl_rates))
+                
+            r_repl = sum(repl_rates)
+            #print("Replication rate: ",r_repl)
+            r_death = self.p_death*len(init)
+            #print("Death rate: ",r_death)
+            rate = (r_repl,r_death)
+            
+            u1 = random.uniform(0,1)
+            u2 = random.uniform(0,1)
+            while isinstance(u1, complex):
+                u1 = random.uniform(0,1)
+            delta_t = (1/sum(rate))*math.log(1/u1)
+            while isinstance(u2, complex):
+                u2 = random.uniform(0,1)
+            
+            
+            csum_rate = (r_repl/(r_repl+r_death),r_death/(r_repl+r_death))
+            #print("csum_rate ",csum_rate)
+            csum = np.cumsum(csum_rate)
+            r = u2*sum(csum_rate) 
+            
+            repl_event = False
+            death_event = False
+            
+            if r < csum[0]:
+                repl_event = True
+            elif csum[0] < r < csum[1]:
+                death_event = True
+            
+
+            new_set = []
+            
+            # Add sequences to list if birth event
+            if repl_event == True:
+                #print("  Picked replication event")
+                # Pick sequences to replicate with a certain probability - by index
+                #pick_ind = random.choices(np.arange(0,len(init)), weights=np.full(len(init), curr_p_repl/r_repl),k=math.ceil(len(init)*(curr_p_repl/r_repl)))
+                pick_ind = random.choices( np.arange(0,len(init)), weights=repl_rates, k=1)
+                #print("Sequences to replicate: ",pick_ind)
+                # Initialize mutated sites
+                num_mut_sites = len(pick_ind)*L*2 + 1
+                while num_mut_sites >= len(pick_ind)*L*2:
+                    num_mut_sites = np.random.poisson(self.p_mut*len(pick_ind)*L)
+                #print("                Number of mutated sites: ",num_mut_sites)
+                ind_mut_sites = np.arange(0,len(pick_ind)*L*2)
+                mut_sites = random.choices(ind_mut_sites.tolist(),weights=mut_prop_per_seq*2,k=num_mut_sites)
+                #print("Mutating sites: ",mut_sites)
+                
+                pick_children = []
+                
+                for ind in pick_ind:
+                    pick_children.append(init[ind])
+                    pick_children.append(init[ind])
+                    repl_rates = np.append(repl_rates,repl_rates[ind])
+                    repl_rates = np.append(repl_rates,repl_rates[ind])
+
+                if num_mut_sites > 0:
+                    for i in mut_sites:
+                        if not i in mutated_positions:
+                            mutated_positions.append(i)
+                            seq_ind = math.floor(i/L)
+                            seq_pos = i % L
+                            seq = list(pick_children[seq_ind])
+                           
+                            if (seq_pos in rec_mutants.keys()) and (seq[seq_pos]==initSeq[seq_pos]):
+                                #print("Recurrent mutant: ",seq_pos)
+                                # If it is a recurrent mutant, assign a new sequence identity
+                                rec_mutants[seq_pos].append(t)
+                            else:
+                                #print("New mutant: ",seq_pos)
+                                rec_mutants[seq_pos] = [t]
+                            #seq[seq_pos] = self._mutateBase(new_set[seq_ind][seq_pos],initSeq[seq_pos])
+                            seq[seq_pos] = self._mutateBase(seq[seq_pos],initSeq[seq_pos])
+                            
+                            #print("                       Mutated site: ",seq_pos)
+                            s = "".join(seq)
+                            pick_children[seq_ind] = s
+                # If birth event - no tips available
+                tipsList.append([])
+                # Append children to init
+                for seq in pick_children:
+                    init.append(seq)
+                # Remove parent
+                init.pop(pick_ind[0])
+                repl_rates = np.delete(repl_rates,pick_ind[0])
+                #print("   New init size: ",len(init))
+            # if death event - remove sequences from population        
+            elif death_event == True:
+                #print("Picked death event")
+                pick = []
+                pick_ind = random.choices(np.arange(0,len(init)), weights=np.full(len(init), self.p_death/r_death), k=1)
+                
+                new_init = []
+                new_repl = []
+                for idx in range(len(init)):
+                    if idx in pick_ind:
+                        pick.append(init[idx])
+                    else:
+                        new_init.append(init[idx])
+                        new_repl.append(repl_rates[idx])
+                init = copy.deepcopy(new_init)
+                repl_rates = copy.deepcopy(np.array(new_repl))
+                #print("   New init size: ",len(init))
+                tipsList.append(pick)
+                
+            # Add to trajectory
+            new_set = copy.deepcopy(init)
+            t = t + delta_t
+            time_trajectory.append(t)
+            
+            if len(new_set)==0:
+                break
+        return trajectory, time_trajectory, initSeq, tipsList, rec_mutants
     
     
     def samplingProc(self,sampling_list,sampl_rate):
