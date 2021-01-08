@@ -102,7 +102,7 @@ for i, date in enumerate(dates):
 bin_merging_data = []
 
 # Save clusters from first run
-iteration = 1
+iteration = 0
 components_names_global = []
 
 #List individual binning directories
@@ -292,9 +292,9 @@ for folder in binnings:
     else:
         components_names = components_names_global
         
-    print("           Density based clustering")
-    clustering = parameterEstimation(seq_list_base_complete,seq_list_pairs_complete,reference)
-    components_names = clustering.runHapl()
+    #print("           Density based clustering")
+    #clustering = parameterEstimation(seq_list_base_complete,seq_list_pairs_complete,reference)
+    #components_names = clustering.runHapl()
             
     print("           Calculated overall mutant proportion: ",mut_proportion)
     
@@ -304,7 +304,7 @@ for folder in binnings:
     analyze = analyzeTrajectory(filtered_seqset, mut_proportion, '')
     #thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
     
-    thetas, variance, variance_size, num_seqs, num_mut, origins, thetas_e = analyze.analyzeBinsMLEcl(clustering)
+    thetas, variance, variance_size, num_seqs, num_mut, origins, thetas_e = analyze.analyzeBinsMLEcl(components_names)
     # Theta from phylogeny - homoplasic sites
     #analyze = analyzeTrajectory(filtered_seqset, mut_proportion, '', tree)
     #thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()

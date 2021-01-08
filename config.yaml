@@ -5,7 +5,7 @@ samples: ""
 # 1/22/20: "%m/%d/%y"
 # 22-01-2020: "%d-%m-%Y"
 # 2020-02-24T18:00:00: "%Y-%m-%dT%H:%M:%S"
-reported_cases: ["data.csv","sep","date_column_name","new_cases_column_name","date_format"]
+reported_cases: ["table.csv",",","date","new_cases","%Y-%m-%d"]
 # smooth the reported cases data?
 smoothing: False
 # Log-transform the estimates for spline computation?
@@ -13,11 +13,11 @@ log_transform: True
 # metadata filename
 samples_meta: ""
 # consensus filename
-consensus: ""
+consensus: "sequence"
 # number of sequences per bin for binning mode with equally sized bins
-number_per_bin: [30,40,50,60,65]
+number_per_bin: [20,50,100,3500]
 # number of days per bin for binning mode with equal amount of calendar days
-days_per_bin: [5,10,12,17,20]
+days_per_bin: [10,15,20]
 # minimal bin size - some fraction of big bin file
 min_bin_size: 15
 # minimal days span
@@ -27,6 +27,11 @@ max_days_span: 21
 # Date when e.g. lockdown measures came into place - for plots
 date_m: 2020-03-22
 # Reported cases full path
-rep_cases_full: "path/to/rep_cases"
+rep_cases_full: ""
 # Country name for plot grouping
-group: "country"
+group: ""
+# Mode of the run: tree or clusters
+mode: "clusters"
+# If mode tree - give path to annotated Newick tree with homoplasies and consistency index file
+annotated_tree: ""
+cindex: ""
