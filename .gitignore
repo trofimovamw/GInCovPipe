@@ -1,0 +1,13 @@
+.DS_Store
+
+# python related
+.snakemake*
+*__pycache__*
+
+
+# result data files
+results/*
+logs*
+consensus/*
+raw/*
+reported_cases/*
