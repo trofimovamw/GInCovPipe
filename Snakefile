@@ -191,10 +191,9 @@ rule theta_estimates:
 		"results/plots/table_merged_thetas_var_from_size.tsv"
 	params:
 		ref = config["consensus"],
+		cutoff = config["freq_cutoff"],
 		rep_cases = config["reported_cases"],
 		min_bin_size = config["min_bin_size"],
-		smoothing = config["smoothing"],
-		log_transform = config["log_transform"],
 		min_days_span = config["min_days_span"],
 		max_days_span = config["max_days_span"],
 		meta = config["samples"]
@@ -207,7 +206,7 @@ rule splines:
 	input:
 		infile = "results/plots/table_merged_thetas_var_from_size.tsv"
 	params:
-		rep_cases = config["rep_cases_full"],
+		rep_cases = os.path.join(workflow.basedir,"reported_cases/",config["reported_cases"][0]),
 		group = config["group"]
 	conda:
 		"env/env.yml"

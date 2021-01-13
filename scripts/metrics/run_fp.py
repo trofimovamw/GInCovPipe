@@ -7,22 +7,16 @@ Created on Mon Jul 13 16:44:06 2020
 """
 
 import os
-
 from pathlib import Path
-
 import numpy as np
-
 import csv
+import matplotlib.pyplot as plt
+import pandas as pd
+import datetime
 
 from bam_to_fingerprints import SAMtoFP
-
 from modular_theta_from_dict import analyzeTrajectory
-
-import matplotlib.pyplot as plt
-
-import pandas as pd
-
-import datetime
+from parameter_est import parameterEstimation
 
 
 #plt.style.use('ggplot')
@@ -43,8 +37,14 @@ od_split = od.split("/table")
 out_dir = FILEPATH_interm.parent / od_split[0]
 
 # Reference location
-ref = snakemake.params.ref[0]
-reference = FILEPATH_interm.parent / ref
+ref = snakemake.params.ref
+# Name of reference sequence
+reffile = str(ref)+'.fasta'
+reference = FILEPATH_interm.parent / "consensus" / reffile
+with open(str(reference), "r") as file:
+    header = file.readline()
+refname = header.strip(">")
+refname = refname.strip("\n")
 
 # Reported cases data
 table_name = snakemake.params.rep_cases[0]
@@ -54,11 +54,13 @@ table_active_col = snakemake.params.rep_cases[3]
 table_date_format = snakemake.params.rep_cases[4]
 table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
 
+# Base frequency cutoff
+freqCutoff = snakemake.params.cutoff
+
 # Filtering and transformation parameters
 min_bin_size = snakemake.params.min_bin_size
 min_days_span = snakemake.params.min_days_span
 max_days_span = snakemake.params.max_days_span
-smoothing = snakemake.params.smoothing
 
 
 WORKING_PATH = FILEPATH_interm.parent
@@ -102,20 +104,28 @@ for folder in binnings:
     #Initialize results arrays
     seq_list_base_complete = []
     seq_list_pos_complete = []
+    seq_list_pairs_complete = []
 
     seq_dict_int = []
-    print("Doing folder ",folder)
+    print('-' * 80)
+    print("Current binning folder: ",folder)
     print("      Starting to record mutant positions from CIGAR strings...")
     for filename in files:
         path = binnings_dir+'/'+filename
-        sam_to_fp = SAMtoFP(path)
-        seq_lbase, seq_posbase = sam_to_fp.writeFP()
+        sam_to_fp = SAMtoFP(path,reference,refname)
+        seq_lbase, seq_posbase, lref, mutants_pairs_list = sam_to_fp.writeFP()
         seq_list_base_complete.append(seq_lbase)
         seq_list_pos_complete.append(seq_posbase)
+        seq_list_pairs_complete.append(mutants_pairs_list)
+        
+    print("      Done.\n")
+    print("      Filtering variants; cutoff of <= %d sequences" % freqCutoff)
+    filt = parameterEstimation(seq_list_base_complete,seq_list_pairs_complete,reference,freqCutoff)
+    mut_proportion, filtered_seqset = filt.run()
     print("      Done.\n")
     print("      Starting to compute optimal metric parameters...")
     #Theta from origins - MLE
-    analyze = analyzeTrajectory(seq_list_base_complete, '')
+    analyze = analyzeTrajectory(filtered_seqset, '')
     thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
     weeks = np.arange(0,len(thetas))
     print("      Done.\n")
@@ -270,7 +280,7 @@ for i, mbin in enumerate(bin_merging_data_):
     num_days_per_binm.append(mbin[8])
 
 
-print("\nMaking the final results table...")
+print("\n      Making the final results table...")
 name_table = "table_merged_thetas_var_from_size.tsv"
 
 table_path = str(out_dir) + '/' + name_table
