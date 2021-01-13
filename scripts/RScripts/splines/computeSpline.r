@@ -21,11 +21,13 @@ for(p in c("ggplot2", "mgcv","grid","gridExtra")) {
 #Read in arguments
 args = commandArgs(trailingOnly = TRUE)
 if(length(args) < 4) {
-  cat("\nCall the script with 4 arguments: inputFile1 inputFile2 outputFile\n
-The first input file contains a tab separated table with headers and has at least 3 columns: t value variance.\n
-The second input file is a comma separated file and contains a table with reported cases on each date.\n
-The third argument is the grouping variable, e.g. country or city.\n
-The output is written to the outputFile with the given output directory,
+  cat("\nCall the script with 4 arguments: estimatesFile reportedCasesFile label outputFile\n\n
+The first input file contains a tab separated table with headers and has at least 3 columns: \n
+t value variance.\n\n
+The second input file is a comma separated file and contains a table with reported cases on each date. Columns must be named: \n
+date new_cases \n\n
+The third argument is a label, e.g. country or city.\n\n
+The fourth argument is the output path. The output tables are written to the given output directory,
       which is created if it does not exist yet.\n")
   #terminate without saving workspace
   quit("no")
@@ -36,15 +38,16 @@ cat(c("Arguments: ", args, "\n"), sep = "\n")
 # set the absolute paths
 inputFile<-normalizePath(args[1])
 
-input.table = read.table(inputFile, header=T, sep = "\t")
-
 casesFile<-normalizePath(args[2])
 
-cases.table = read.table(casesFile, header=T, sep=",")
+country = toString(args[3])
 
 outputFile<-file.path(args[4])
 
-country = toString(args[3])
+cases.table = read.table(casesFile, header=T, sep=",")
+
+input.table = read.table(inputFile, header=T, sep = "\t")
+
 
 # set working directory to call other R Scripts
 getScriptPath <- function(){
@@ -75,8 +78,9 @@ source("dateFormatRoutines.r")
 fileName<-basename(outputFile)
 outputDir<-dirname(outputFile)
 
-if(!dir.exists(outputDir))
+if(!dir.exists(outputDir)) 
   dir.create(outputDir, showWarnings = FALSE, recursive = TRUE)
+
 outputFile<-paste0(normalizePath(outputDir),"/",fileName)
 
 # Compute the splines and dot sizes
@@ -104,10 +108,16 @@ if (!"new_cases" %in% colnames(cases.table)) {
   quit("no")}
 
 cases.table$new_cases[cases.table$new_cases<0] <- 0
+cases.table$t <- as.days_since_d0(cases.table$date)
+
+cases.spline.table <- computeSplineNewCasesTable(cases.table)
 
 # Write spline table
 write.csv(spline.table,paste0(normalizePath(outputDir),"/spline_",country,".csv"), row.names = T)
 # Write reported cases table
 write.csv(cases.table,paste0(normalizePath(outputDir),"/cases_",country,".csv"), row.names = T)
-# Write reported cases table
-write.csv(input.table,paste0(normalizePath(outputDir),"/raw_",country,".csv"), row.names = T)
+# Write reported cases spline table
+write.csv(cases.spline.table,paste0(normalizePath(outputDir),"/cases_spline_",country,".csv"), row.names = T)
+# Write estimated theta table
+write.csv(input.table,paste0(normalizePath(outputDir),"/theta_",country,".csv"), row.names = T)
+

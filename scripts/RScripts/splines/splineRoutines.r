@@ -134,7 +134,7 @@ addSplineValuesForTrueN <- function(input.table, gam.table) {
   xx<- seq(min(input.table$t), max(input.table$t), len = max(input.table$t) - min(input.table$t)+1)
   
   gam.table_true<-calculateCI(trueN_gam_cs, xx)
-  gam.table["value_trueN"] <-gam.table$value
+  gam.table["value_trueN"] <-gam.table_true$value
   gam.table["value_trueN_lower"] <- gam.table_true$lowerSe
   gam.table["value_trueN_upper"] <- gam.table_true$upperSe
   gam.table["value_trueN_lowerSim"] <- gam.table_true$lowerSim
@@ -151,7 +151,7 @@ computeSplineNewCasesTable <- function(input.table) {
     edf = edf_act
     k<-k+5
     #trueN comes from poisson distribution, hence no negative values (family=poisson -> link=logs)
-    trueN_gam_cs <- gam(round(value) ~ s(t,bs="cs", k=k),
+    trueN_gam_cs <- gam(round(new_cases) ~ s(t,bs="cs", k=k),
                         data=input.table, method="REML", family = poisson())
     edf_act<- summary(trueN_gam_cs)$edf
     if((edf_act-edf)<0.5 || k>= min(30,nrow(input.table)))
