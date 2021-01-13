@@ -59,6 +59,19 @@ class SAMtoFP:
         """
         Translates CIGAR strings to sequence fingerprints in format 
         Position>Mutant_base
+        CIGAR string signatures are taken in form of Pysam cigartuple in format:
+            (operation,length)
+        Key list:
+            M (mis-match) = 0
+            I (insertion) = 1
+            D (deletion) = 2
+            N (reference skip) = 3
+            S (soft clip) = 4
+            H (hard clip) = 5
+            P (pad) = 6
+            = (match) = 7
+            X (mismatch) = 8
+            B (back) = 9
         :param seq: query sequence
         :param cigar: cigar string as pysam cigar table
         :param start: position on query where the query starts

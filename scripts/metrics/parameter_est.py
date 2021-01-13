@@ -632,6 +632,7 @@ class parameterEstimation:
         print("           Before filtering: ")
         print("              Number of sequences: ",num_seqs_pre)
         print("              Number of mutant sequences: ",mut_count_pre)
+        self.freqCutoff = 1
         filteredSets1 = self._filterSingletons()
         self.seqSets = filteredSets1
        
