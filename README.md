@@ -25,27 +25,20 @@ The pipeline creates a folder **'results'**, containing all (intermediate) outpu
     │               ├── counts_*.tsv            # count matrix                       
     │               ├── header_*.tsv            # header files (seq. name & date)
     |               ├── range_*.tsv             # range of dates of the corresponding bin
-    |   ├── fixed_cigars_bins                   # binning results with modified CIGAR strings
-    │       ├── cal_week                        # binned by calendar week
-    │       ├── eq_days_10                      # binned by equal days                       
-    │       ├── eq_size_100                     # binned by equal number of sequences
-    │       ├── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
-    │               ├── bin_*.bam               # binned sequences as BAM
-    │               ├── bin_*.bai               # corresponding index BAM files
     │   ├── plots                               # Results plots (and tables)
     │   └── raw                                 # Preprocessed files
     │   
     └── ...
 ```
-The final diversity analysis (plots and tables) can be found in the subfolder **results/plots**.
+The final diversity analysis (plots and tables) can be found in the subfolder **results/plots** and the smoothed spline trajectory can be found in subfolder **results/splines**.
 
 
 ## How to run this pipeline - A small instruction
 
-This is a small guide on how to run the pipeline. If you follow this instruction, it will be easier to understand what went wrong in case of any trouble :)
+This is a small guide on how to run the pipeline. If you follow this instruction, it will be easier to understand what went wrong in case of any trouble.
 
 ### 1. Prerequisites
-To run this pipeline, some tools have to be installed. While some are necessary (Snakemake, SamFixCigar), others are optional (Conda/Miniconda).
+To run this pipeline, some tools have to be installed. While some are necessary (Snakemake), others are optional (Conda/Miniconda).
 However, we recommend to follow all steps, since we cannot guarantee functionality otherwise.
 
 #### 1.1 Install Conda/Miniconda - if you haven't yet
@@ -74,10 +67,6 @@ Snakemake is the workflow management system we use. Install it like this:
 ```
 conda install snakemake
 ```
-
-#### 1.4 Download and compile SamFixCigar
-
-Instruction can be found here: http://lindenb.github.io/jvarkit/SamFixCigar.html
 
 ### 2. Initialize the pipeline
 
@@ -112,6 +101,7 @@ To compare estimated population dynamics with reported active cases, include a t
   ```
   reported_cases: ["reported_cases.csv","\t","date","active_cases","%m/%d/%y"]
   ```
+  
 where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, followed by date column name, active cases column name and a format the date is stored in.
 
 #### 2.3 Reference consensus sequence
@@ -126,25 +116,14 @@ Further copy and paste its filename (without extension) into the variable **cons
 #### 2.4 Binning parameters
 You also have to set the parameters for some of the binning methods in [`config.yaml`](./config.yaml).
 You can set the number of sequences per bin on line 5, and the number of days on line 6.
-Parameters should be given as a list.
+Parameters should be given as a list. Additionally, minimal bin size and maximal days span should be
+provided.
 
 ```
 number_per_bin: [20, 30]
 days_per_bin: [7, 10, 30]
-```
-
-#### 2.5 Metric Parameters
-
-You should also specify minimal size of bin used for spline computation, and whether smoothing of cases reports data and log transformation of theta estimates is desired in [`config.yaml`](./config.yaml):
-
-```
-smoothing: False
-```
-```
-log_transform: True
-```
-```
 min_bin_size: 15
+max_days_span: 21
 ```
 
 
