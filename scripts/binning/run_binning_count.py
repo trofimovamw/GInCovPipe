@@ -27,8 +27,7 @@ days_per_bin = snakemake.params.eq_days
 param1 = num_per_bin[0]
 param2 = days_per_bin[0]
 
-reffile = str(snakemake.params.reference)+'.fasta'
-reffile_dir = FILEPATH_interm.parent / "consensus" / reffile
+reffile_dir = str(snakemake.params.reference)
 with open(str(reffile_dir), "r") as file:
     header = file.readline()
 param3 = header.strip(">")

@@ -37,10 +37,10 @@ od_split = od.split("/table")
 out_dir = FILEPATH_interm.parent / od_split[0]
 
 # Reference location
-ref = snakemake.params.ref
-# Name of reference sequence
-reffile = str(ref)+'.fasta'
-reference = FILEPATH_interm.parent / "consensus" / reffile
+reference = str(snakemake.params.ref)
+## Name of reference sequence
+#reffile = str(ref)+'.fasta'
+#reference = FILEPATH_interm.parent / "consensus" / reffile
 with open(str(reference), "r") as file:
     header = file.readline()
 refname = header.strip(">")

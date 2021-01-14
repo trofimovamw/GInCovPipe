@@ -1,28 +1,25 @@
-# raw samples data filename
-samples: ""
-# table name with format, delimiter, date column name, active cases column name, date format
-# Examples:
+# 1. Full path of raw samples data filename with collection dates in FASTA headers
+samples: "/path/to/samples/fasta"
+# 2. Reported cases table in TSV or CSV format full path with delimiter, date column name,
+# active cases column name, date format
+# Examples for date formatting:
 # 1/22/20: "%m/%d/%y"
 # 22-01-2020: "%d-%m-%Y"
 # 2020-02-24T18:00:00: "%Y-%m-%dT%H:%M:%S"
-reported_cases: ["table.csv",",","date","new_cases","%Y-%m-%d"]
-# smooth the reported cases data?
-smoothing: False
-# metadata filename
-samples_meta: ""
-# consensus filename
-consensus: "sequence"
-# number of sequences per bin for binning mode with equally sized bins
+reported_cases: ["/path/to/cases/table",",","date","new_cases","%Y-%m-%d"]
+# 3. Consensus sequence full file path in FASTA format
+consensus: "/path/to/reference/fasta"
+# 4. Number of sequences per bin for binning mode with equally sized bins
 number_per_bin: [30,50,65]
-# number of days per bin for binning mode with equal amount of calendar days
+# 5. Number of days per bin for binning mode with equal amount of calendar days
 days_per_bin: [10,15,20]
-# minimal bin size - some fraction of big bin file
+# 6. Minimal bin size - some fraction of big bin file
 min_bin_size: 15
-# minimal days span
+# 7. Minimal days span
 min_days_span: 3
-# maximal days span
+# 8. Maximal days span
 max_days_span: 21
-# mutant base frequency cutoff - as count
+# 9. Mutant base frequency cutoff - as count
 freq_cutoff: 2
-# Country name for plot grouping
-group: "country"
+# 10. Sample name for plot grouping, e.g. country or data set name
+group: "group"

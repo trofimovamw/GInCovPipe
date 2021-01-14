@@ -43,87 +43,54 @@ rule all:
 	input:
 		"results/splines/out_spline.pdf"
 
-if config["samples_meta"] != "":
-	rule add_metadata:
-		input:
-			fasta = "raw/{sm}.fasta",
-			meta = "raw/{sm}.tsv"
-		output:
-			"raw/{sm}_reform.fasta"
-		conda:
-			"env/env.yml"
-		shell:
-			"python scripts/binning/add_date_from_metadata.py {input.fasta} {input.meta} {output}"
 
-	rule strip_whitespaces2:
-		input:
-			"raw/{sm}_reform.fasta"
-		output:
-			"results/raw/{sm}_fixed1.fasta"
-		conda:
-			"env/env.yml"
-		log:
-			"logs/ws_{sm}.log"
-		shell:
-			"reformat.sh in={input} out={output} underscore ignorejunk overwrite=true 2> {log}"
-
-if config["samples"] != "":
-	rule strip_whitespaces1:
-		input:
-			expand("raw/{sample}.fasta", sample=config["samples"])
-		output:
-			expand("results/raw/{sample}_fixed1.fasta", sample=config["samples"])
-		conda:
-			"env/env.yml"
-		log:
-			expand("logs/ws_{sample}.log", sample=config["samples"])
-		shell:
-			"reformat.sh in={input} out={output} underscore ignorejunk overwrite=true 2> {log}"
+rule strip_whitespaces:
+	input:
+		config["samples"]
+	output:
+		expand("results/raw/{sample}_fixed1.fasta", sample=config["samples"])
+	conda:
+		"env/env.yml"
+	log:
+		expand("logs/ws_{sample}.log", sample=config["samples"])
+	shell:
+		"reformat.sh in={input} out={output} underscore ignorejunk overwrite=true 2> {log}"
 
 
 rule samtools_faidx:
 	input:
-		expand("consensus/{reference}.fasta", reference=config["consensus"])
+		expand("{reference}.fasta", reference=config["consensus"])
 	output:
-		expand("consensus/{reference}.fasta.fai", reference=config["consensus"])
+		expand("{reference}.fasta.fai", reference=config["consensus"])
 	shell:
 		"samtools faidx {input}"
 
-rule merge_fasta:
-	input:
-		fasta1 = expand("results/raw/{sm}_fixed1.fasta", sm=config["samples_meta"]),
-		fasta2 = expand("results/raw/{sample}_fixed1.fasta", sample=config["samples"])
-	output:
-		expand("results/raw/{sample}{sm}_fixed1.fasta", sample=config["samples"], sm=config["samples_meta"])
-	shell:
-		"cat {input.fasta1} {input.fasta2} > {output}"
-
 rule replace_dashes:
 	input:
-		"results/raw/{sample}{sm}_fixed1.fasta"
+		"results/raw/{sample}_fixed1.fasta"
 	output:
-		"results/raw/{sample}{sm}_fixed12.fasta"
+		"results/raw/{sample}_fixed12.fasta"
 	conda:
 		"env/env.yml"
 	log:
-		"logs/dashes_{sample}{sm}.log"
+		"logs/dashes_{sample}.log"
 	shell:
 		"seqkit replace -s -p '-' -r 'N' {input} -o {output} 2> {log}"
 
 rule samtools_dict:
 	input:
-		expand("consensus/{reference}.fasta", reference=config["consensus"])
+		expand("{reference}", reference=config["consensus"])
 	output:
-		expand("consensus/{reference}.dict", reference=config["consensus"])
+		expand("{reference}.dict", reference=config["consensus"][:-5])
 	shell:
 		"samtools dict {input} -o {output}"
 
 
 rule minimap_index_ref:
 	input:
-		expand("consensus/{reference}.fasta", reference=config["consensus"])
+		expand("{reference}", reference=config["consensus"])
 	output:
-		expand("consensus/{reference}.mmi", reference=config["consensus"])
+		expand("{reference}.mmi", reference=config["consensus"][:-5])
 	conda:
 		"env/env.yml"
 	shell:
@@ -131,24 +98,24 @@ rule minimap_index_ref:
 
 rule minimap:
 	input:
-		ref = expand("consensus/{reference}.mmi", reference=config["consensus"]),
-		s = "results/raw/{sample}{sm}_fixed12.fasta"
+		ref = expand("{reference}.mmi", reference=config["consensus"][:-5]),
+		s = "results/raw/{sample}_fixed12.fasta"
 	output:
-		"results/bam/{sample}{sm}.bam"
+		"results/bam/{sample}.bam"
 	conda:
 		"env/env.yml"
 	log:
-		"logs/map_{sample}{sm}.log"
+		"logs/map_{sample}.log"
 	shell:
 		"minimap2 -a --eqx {input.ref} {input.s} | samtools view -Sb -F 0x900 > {output} 2> {log}"
 
 rule sort_bam:
 	input:
-		"results/bam/{sample}{sm}.bam"
+		"results/bam/{sample}.bam"
 	output:
-		"results/bam/{sample}{sm}-sorted.bam"
+		"results/bam/{sample}-sorted.bam"
 	log:
-		"logs/sort_{sample}{sm}.log"
+		"logs/sort_{sample}.log"
 	conda:
 		"env/env.yml"
 	shell:
@@ -156,21 +123,21 @@ rule sort_bam:
 
 rule index_bam:
 	input:
-		"results/bam/{sample}{sm}-sorted.bam"
+		"results/bam/{sample}-sorted.bam"
 	output:
-		"results/bam/{sample}{sm}-sorted.bam.bai"
+		"results/bam/{sample}-sorted.bam.bai"
 	conda:
 		"env/env.yml"
 	log:
-		"logs/index_{sample}{sm}.log"
+		"logs/index_{sample}.log"
 	shell:
 		"samtools index {input} 2> {log}"
 
 
 rule run_binning:
 	input:
-		bam = expand("results/bam/{sample}{sm}-sorted.bam", sample=config["samples"], sm=config["samples_meta"]),
-		bai = expand("results/bam/{sample}{sm}-sorted.bam.bai", sample=config["samples"], sm=config["samples_meta"])
+		bam = expand("results/bam/{sample}-sorted.bam", sample=config["samples"]),
+		bai = expand("results/bam/{sample}-sorted.bam.bai", sample=config["samples"])
 	output:
 		files_list = "results/bins/list_of_binnings.tsv",
 		meta = "results/meta/meta_dates.tsv"
@@ -195,8 +162,7 @@ rule theta_estimates:
 		rep_cases = config["reported_cases"],
 		min_bin_size = config["min_bin_size"],
 		min_days_span = config["min_days_span"],
-		max_days_span = config["max_days_span"],
-		meta = config["samples"]
+		max_days_span = config["max_days_span"]
 	conda:
 		"env/env.yml"
 	script:
@@ -206,7 +172,7 @@ rule splines:
 	input:
 		infile = "results/plots/table_merged_thetas_var_from_size.tsv"
 	params:
-		rep_cases = os.path.join(workflow.basedir,"reported_cases/",config["reported_cases"][0]),
+		rep_cases = config["reported_cases"][0],
 		group = config["group"]
 	conda:
 		"env/env.yml"
