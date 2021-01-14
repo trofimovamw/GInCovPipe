@@ -37,6 +37,8 @@ for name in config["days_per_bin"]:
 	binnings_names.append(s2)
 binnings_names.append("cal_week")
 
+basefilename = os.path.basename(config["samples"])[:-6]
+
 report: "report/workflow.rst"
 
 rule all:
@@ -48,20 +50,20 @@ rule strip_whitespaces:
 	input:
 		config["samples"]
 	output:
-		expand("results/raw/{sample}_fixed1.fasta", sample=config["samples"])
+		expand("results/raw/{sample}_fixed1.fasta", sample=basefilename)
 	conda:
 		"env/env.yml"
 	log:
-		expand("logs/ws_{sample}.log", sample=config["samples"])
+		expand("logs/ws_{sample}.log", sample=basefilename)
 	shell:
 		"reformat.sh in={input} out={output} underscore ignorejunk overwrite=true 2> {log}"
 
 
 rule samtools_faidx:
 	input:
-		expand("{reference}.fasta", reference=config["consensus"])
+		expand("{reference}", reference=config["consensus"])
 	output:
-		expand("{reference}.fasta.fai", reference=config["consensus"])
+		expand("{reference}.fai", reference=config["consensus"])
 	shell:
 		"samtools faidx {input}"
 
@@ -136,8 +138,8 @@ rule index_bam:
 
 rule run_binning:
 	input:
-		bam = expand("results/bam/{sample}-sorted.bam", sample=config["samples"]),
-		bai = expand("results/bam/{sample}-sorted.bam.bai", sample=config["samples"])
+		bam = expand("results/bam/{sample}-sorted.bam", sample=basefilename),
+		bai = expand("results/bam/{sample}-sorted.bam.bai", sample=basefilename)
 	output:
 		files_list = "results/bins/list_of_binnings.tsv",
 		meta = "results/meta/meta_dates.tsv"
