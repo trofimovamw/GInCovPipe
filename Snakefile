@@ -4,11 +4,8 @@
 
 import os
 
-import numpy as np
-
 
 report: "report/workflow.rst"
-
 
 configfile: "config.yaml"
 
