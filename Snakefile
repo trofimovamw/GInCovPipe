@@ -11,31 +11,6 @@ report: "report/workflow.rst"
 
 
 configfile: "config.yaml"
-working_dir = os.getcwd()
-
-# List of bin files (BAM)
-bin_ind = np.arange(1000)
-bin_ind_list = bin_ind.tolist()
-bin_ind_padded = []
-for ind in bin_ind_list:
-	inds = str(ind)
-	inds0 = inds.zfill(4)
-	bin_ind_padded.append(inds0)
-
-# List of binning modes for wildcards
-eq_size = "eq_size_names_"
-binnings_names = []
-for name in config["number_per_bin"]:
-	s = eq_size+str(name)
-	binnings_names.append(s)
-eq_days = "eq_days_"
-fuzzy_days = "fuzzy_days_"
-for name in config["days_per_bin"]:
-	s1 = eq_days+str(name)
-	s2 = fuzzy_days+str(name)
-	binnings_names.append(s1)
-	binnings_names.append(s2)
-binnings_names.append("cal_week")
 
 basefilename = os.path.basename(config["samples"])[:-6]
 
