@@ -22,7 +22,7 @@ import math
 from pathlib import Path
 
 from generate_evol_bins_gillespie import generateEvolGill
-from simulate_sequence_evo import sequenceEvol
+from sequence_evolution import sequenceEvol
 
 from modular_theta_est_mle import analyzeTrajectory
 
@@ -38,8 +38,11 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description='Simulate sequence evolution.')
 
 # Required arguments
-parser.add_argument('-fasta', required=True,
-                    help='fasta file to write the simulated sequences to')
+parser.add_argument('-file_prefix', required=True,
+                    help='file_prefix for fasta file to write the simulated sequences to')
+
+parser.add_argument('-output', required=True,
+                    help='output path were the simulated fasta and table files are saved')
 
 parser.add_argument('-L', type=int, required=True,
                     help='sequence length')
@@ -77,8 +80,6 @@ parser.add_argument('-init_seq', nargs='?',
                     help='(optional) Initial sequence. If not given, a random sequence is created.')
 
 
-DAY0 = date.fromisoformat("2020-01-01")
-
 args = parser.parse_args()
 
 print("*"*100)
@@ -97,9 +98,24 @@ evol_run = sequenceEvol(length=args.L,
                             t_start=0,
                             t_final=args.t_final,
                             t_switch=math.floor(args.t_final / 2),
-                            outFile=args.fasta)
-# Sampling on tips only
-#trajectory_indiv, time_trajectory, initSeq, tipsList = evol_run.mutate()
+                            file_prefix=args.file_prefix)
+
+# run simulation
+time_trajectory = evol_run._evolve_poi()
+
+# header=hCoV-19/Italy/LAZ-INMI1-isl/2020|EPI_ISL_410545|2020-01-29
+header_prefix=">NS|"
+file_suffix = "_NS"
+
+file_str = args.output + "/" + args.file_prefix + file_suffix +".fasta"
+
+# write fasta with all sequences
+evol_run._write_fasta(outputfile=file_str, header_prefix=header_prefix, species_dict=time_trajectory)
+
+# create files for subsampling
+#for s_abs in
+
+
 # Bin sampled tips
 # Sizes of each sampled tip set
 #sampling_sizes = [len(s) for s in tipsList]
