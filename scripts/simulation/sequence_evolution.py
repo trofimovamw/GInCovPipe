@@ -6,33 +6,6 @@ import random
 import math
 
 
-def mutateBase(base):
-	'''
-	Mutate individual nucleotide according
-	to Kimura model, fixed transition probability
-	'''
-
-	stay = 0
-	alpha = 0.2
-	beta = 0.2
-	gamma = 0.6
-
-	transitions = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
-	transversions_alpha = {'A': 'C', 'C': 'A', 'T': 'G', 'G': 'T'}
-	transversions_beta = {'A': 'G', 'G': 'A', 'T': 'C', 'C': 'T'}
-
-	r = np.random.uniform(0, 1)
-
-	if stay <= r < (stay + gamma):
-		return transitions[base]
-	elif (stay + gamma) <= r < (stay + gamma + alpha):
-		return transversions_alpha[base]
-	elif (stay + gamma + alpha) <= r < (stay + gamma + alpha + beta):
-		return transversions_beta[base]
-	return base
-
-
-
 class sequenceEvol:
 	'''
 	Each instance of this class represens one evolutionary trajectory run. Starting with a sequence set of equal sequences,
@@ -117,7 +90,7 @@ class sequenceEvol:
 						seq_pos = i % self.L
 						seq = list(new_set[seq_ind])
 						# seq[seq_pos] = self._mutateBase(new_set[seq_ind][seq_pos],initSeq[seq_pos])
-						seq[seq_pos] = mutateBase(new_set[seq_ind][seq_pos])
+						seq[seq_pos] = self.mutateBase(new_set[seq_ind][seq_pos])
 						s = "".join(seq)
 						new_set[seq_ind] = s
 
@@ -130,3 +103,30 @@ class sequenceEvol:
 			t += 1
 
 		return species_dict_per_t
+
+	@staticmethod
+	def mutateBase(base):
+		'''
+		Mutate individual nucleotide according
+		to Kimura model, fixed transition probability
+		'''
+
+		stay = 0
+		alpha = 0.2
+		beta = 0.2
+		gamma = 0.6
+
+		transitions = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
+		transversions_alpha = {'A': 'C', 'C': 'A', 'T': 'G', 'G': 'T'}
+		transversions_beta = {'A': 'G', 'G': 'A', 'T': 'C', 'C': 'T'}
+
+		r = np.random.uniform(0, 1)
+
+		if stay <= r < (stay + gamma):
+			return transitions[base]
+		elif (stay + gamma) <= r < (stay + gamma + alpha):
+			return transversions_alpha[base]
+		elif (stay + gamma + alpha) <= r < (stay + gamma + alpha + beta):
+			return transversions_beta[base]
+		return base
+

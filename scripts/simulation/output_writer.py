@@ -21,13 +21,13 @@ class writer:
 		self.file_prefix = file_prefix
 
 		try:
-			os.mkdir(self.fasta_path)
-		except OSError:
+			Path(self.fasta_path).mkdir(parents=True, exist_ok=True)
+		except FileExistsError:
 			print("Creation of the directory %s failed" % self.fasta_path)
 			exit()
 		try:
-			os.mkdir(self.table_path)
-		except OSError:
+			Path(self.table_path).mkdir(parents=True, exist_ok=True)
+		except FileExistsError:
 			print("Creation of the directory %s failed" % self.fasta_path)
 			exit()
 

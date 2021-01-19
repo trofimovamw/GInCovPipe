@@ -10,13 +10,9 @@ import sys
 import argparse
 import os
 import random
-import string
 import math
 
-
-from generate_evol_bins_gillespie import generateEvolGill
 from sequence_evolution import sequenceEvol
-
 from output_writer import writer
 
 
@@ -107,6 +103,7 @@ file_suffix = "_NS"
 df_NS = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory)
 df_NS["true_N"] = df_NS["sampled_N"]
 
+
 # write fasta with all absolute subsample
 if args.sub_abs is not None:
     for s_abs in args.sub_abs:
@@ -142,5 +139,3 @@ if args.sub_rel is not None:
 
         df_WS_rel = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=subsampled_time_trajectory)
         df_WS_rel["true_N"] = df_NS["true_N"]
-
-print(os.getcwd())
