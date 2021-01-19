@@ -94,6 +94,9 @@ time_trajectory = evol_run.evolve_poi()
 
 wr = writer(outputpath=args.output, file_prefix=args.file_prefix)
 
+# write initial sequence as reference
+wr.write_reference(evol_run.init_seq)
+
 # header=hCoV-19/Italy/LAZ-INMI1-isl/2020|EPI_ISL_410545|2020-01-29
 header_prefix=">NS|"
 file_suffix = "_NS"
@@ -103,6 +106,7 @@ file_suffix = "_NS"
 df_NS = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory)
 df_NS["true_N"] = df_NS["sampled_N"]
 wr.write_table(table=df_NS, file_suffix=file_suffix)
+wr.write_config_yaml(file_suffix=file_suffix)
 
 # write fasta with all absolute subsample
 if args.sub_abs is not None:
@@ -113,6 +117,7 @@ if args.sub_abs is not None:
         df_WS_abs = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory, sub_abs=s_abs)
         df_WS_abs["true_N"] = df_NS["true_N"]
         wr.write_table(table=df_WS_abs, file_suffix=file_suffix)
+        wr.write_config_yaml(file_suffix=file_suffix)
 
 
 # write fasta with all relative subsample
@@ -141,3 +146,4 @@ if args.sub_rel is not None:
         df_WS_rel = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=subsampled_time_trajectory)
         df_WS_rel["true_N"] = df_NS["true_N"]
         wr.write_table(table=df_WS_rel, file_suffix=file_suffix)
+        wr.write_config_yaml(file_suffix=file_suffix)
