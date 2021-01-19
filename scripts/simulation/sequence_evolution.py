@@ -35,7 +35,7 @@ class sequenceEvol:
 		return (init_seq)
 
 
-	def _evolve_poi(self):
+	def evolve_poi(self):
 		'''
 		Mutate initial sequence set over the course of t generations
 		'''

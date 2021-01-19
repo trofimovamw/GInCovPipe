@@ -90,7 +90,7 @@ evol_run = sequenceEvol(length=args.L,
                         )
 
 # run simulation
-time_trajectory = evol_run._evolve_poi()
+time_trajectory = evol_run.evolve_poi()
 
 wr = writer(outputpath=args.output, file_prefix=args.file_prefix)
 
@@ -100,9 +100,9 @@ file_suffix = "_NS"
 
 
 # write fasta with all sequences
-df_NS = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory)
+df_NS = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory)
 df_NS["true_N"] = df_NS["sampled_N"]
-
+wr.write_table(table=df_NS, file_suffix=file_suffix)
 
 # write fasta with all absolute subsample
 if args.sub_abs is not None:
@@ -110,8 +110,9 @@ if args.sub_abs is not None:
         print("---  Subsample sequence set taking " + str(s_abs) + " ---")
         header_prefix = header_prefix=">WS|" + str(s_abs) + "|"
         file_suffix = "_WSABS_"+ str(s_abs)
-        df_WS_abs = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory, sub_abs=s_abs)
+        df_WS_abs = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory, sub_abs=s_abs)
         df_WS_abs["true_N"] = df_NS["true_N"]
+        wr.write_table(table=df_WS_abs, file_suffix=file_suffix)
 
 
 # write fasta with all relative subsample
@@ -137,5 +138,6 @@ if args.sub_rel is not None:
                 time_trajectory_sub[s] = time_trajectory_sub.get(s, 0) + 1
             subsampled_time_trajectory.append(time_trajectory_sub)
 
-        df_WS_rel = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=subsampled_time_trajectory)
+        df_WS_rel = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=subsampled_time_trajectory)
         df_WS_rel["true_N"] = df_NS["true_N"]
+        wr.write_table(table=df_WS_rel, file_suffix=file_suffix)

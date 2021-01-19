@@ -1,7 +1,4 @@
 
-import csv
-import os
-import copy
 import pandas as pd
 
 from pathlib import Path
@@ -32,18 +29,16 @@ class writer:
 			exit()
 
 
-	def _write_fasta(self, header_prefix, species_dict, sub_abs = None, file_suffix = None):
+	def write_fasta(self, header_prefix, species_dict, sub_abs = None, file_suffix = None):
 		'''
 		Write the simulated sequences into one fasta file.
 		Returns a table with dates and counts.
 		'''
-
+		outputfile = self.fasta_path + "/" + self.file_prefix + file_suffix + ".fasta"
 		rows_list = []
 
 		start_time = strptime(self.init_date, "%Y-%m-%d").date()
 		t = 0
-
-		outputfile = self.fasta_path + "/" + self.file_prefix + file_suffix + ".fasta"
 		try:
 			file = open(outputfile, "w+")
 
@@ -68,11 +63,16 @@ class writer:
 				rows_list.append(dict1)
 
 				t += 1
+
 		except OSError:
 			print("Writing of fasta file %s failed" % outputfile)
 			exit()
 		return pd.DataFrame(rows_list)
 
-
-
- #def _write_true_cases(self, foldername, species_dict_per_t):
+	def write_table(self, table, file_suffix = None):
+	    '''
+		Write the table with true and sampled sequence counts for each time step
+		'''
+	    outputfile = self.table_path + "/" + self.file_prefix + file_suffix + ".tsv"
+	    print("--- Write table into file " + outputfile + "---")
+	    table.to_csv(outputfile, sep="\t", header=True, index=False)
