@@ -53,7 +53,7 @@ class writer:
 			exit()
 
 
-	def write_fasta(self, header_prefix, species_dict, sub_abs = None, file_suffix = None):
+	def write_fasta(self, header_prefix, species_dict, file_suffix = None):
 		'''
 		Write the simulated sequences into one fasta file.
 		Returns a table with dates and counts.
@@ -70,16 +70,10 @@ class writer:
 
 			for spec_dict in species_dict:
 				date = start_time + datetime.timedelta(days=t)
-
 				header = header_prefix + str(date.strftime("%Y-%m-%d"))
-
 				sampled_N = 0
 				for seq, num in spec_dict.items():
-					if sub_abs is not None:
-						# take abolsute subsample or N(t) if less
-						num = min(sub_abs, num)
 					sampled_N += num
-					# print( (header+"\n"+seq+"\n") * num )
 					file.write((header + "\n" + seq + "\n") * num)
 
 				# faster way to add rows to a df
@@ -112,12 +106,12 @@ class writer:
 		ref_file =  self.ref_path + "/"+ self.file_prefix+ ".fasta"
 
 		config_dict={"samples":  fasta_file,
-		             "reported_cases" : [table_file, "\t", "date", "sampled_N", "%Y-%m-%d"],
+		             "reported_cases" : [table_file, "\t", "date", "true_N", "%Y-%m-%d"],
 		             "consensus": ref_file,
-		             "number_per_bin": [2, 4, 6, 8, 12],
+		             "number_per_bin": [50, 100, 150],
 		             "days_per_bin": [2, 4, 6, 8, 10],
 		             "min_bin_size": 15,
-		             "min_days_span": 1,
+		             "min_days_span": 2,
 		             "max_days_span": 20,
 		             "freq_cutoff": 2,
 		             "group": file_suffix

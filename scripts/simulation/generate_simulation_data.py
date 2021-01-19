@@ -110,11 +110,28 @@ wr.write_config_yaml(file_suffix=file_suffix)
 
 # write fasta with all absolute subsample
 if args.sub_abs is not None:
+    ts = range(args.t_final)
     for s_abs in args.sub_abs:
         print("---  Subsample sequence set taking " + str(s_abs) + " ---")
         header_prefix = header_prefix=">WS|" + str(s_abs) + "|"
         file_suffix = "_WSABS_"+ str(s_abs)
-        df_WS_abs = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory, sub_abs=s_abs)
+
+        subsampled_time_trajectory = []
+        for t in ts:
+            num_seq = sum(time_trajectory[t].values())
+            time_trajectory_sub = {}
+            # take abolsute subsample or N(t) if less
+            if(num_seq > s_abs):
+                # sampling the particular sequences for each time point without replacemenet
+                seq_subset = random.sample(list(time_trajectory[t].keys()), counts=time_trajectory[t].values(), k=s_abs)
+                # counts sampled sequences
+                for s in seq_subset:
+                    time_trajectory_sub[s] = time_trajectory_sub.get(s, 0) + 1
+            else:
+                time_trajectory_sub = time_trajectory[t]
+            subsampled_time_trajectory.append(time_trajectory_sub)
+
+        df_WS_abs = wr.write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=subsampled_time_trajectory)
         df_WS_abs["true_N"] = df_NS["true_N"]
         wr.write_table(table=df_WS_abs, file_suffix=file_suffix)
         wr.write_config_yaml(file_suffix=file_suffix)
