@@ -8,29 +8,16 @@ Created on Wed Jan 13 18:426:09 2021
 
 import sys
 import argparse
-
-import numpy as np
-
 import os
-import csv
-import copy
-
 import random
 import string
 import math
 
-from pathlib import Path
 
 from generate_evol_bins_gillespie import generateEvolGill
 from sequence_evolution import sequenceEvol
 
-from modular_theta_est_mle import analyzeTrajectory
-
-from datetime import datetime, timedelta, date
-
-
-
-import matplotlib.pyplot as plt
+from output_writer import writer
 
 
 
@@ -76,8 +63,14 @@ parser.add_argument('--switch_orig', action='store_true', required=False,
                          'If true: switch to secon replication rate at the same time point as the original outbreak. '
                          'If false: switch is at the half of the respective time frame.')
 
-parser.add_argument('-init_seq', nargs='?',
+parser.add_argument('-init_seq', nargs='+',
                     help='(optional) Initial sequence. If not given, a random sequence is created.')
+
+parser.add_argument('-sub_rel', type=float, nargs='+', required=False,
+                    help='(optional) relative subsampling of the complete sequence set')
+
+parser.add_argument('-sub_abs', type=int, nargs='+', required=False,
+                    help='(optional) absolute amount of subsampled sequences per day')
 
 
 args = parser.parse_args()
@@ -97,25 +90,57 @@ evol_run = sequenceEvol(length=args.L,
                             N_init=args.N_init,
                             t_start=0,
                             t_final=args.t_final,
-                            t_switch=math.floor(args.t_final / 2),
-                            file_prefix=args.file_prefix)
+                            t_switch=math.floor(args.t_final / 2)
+                        )
 
 # run simulation
 time_trajectory = evol_run._evolve_poi()
+
+wr = writer(outputpath=args.output, file_prefix=args.file_prefix)
 
 # header=hCoV-19/Italy/LAZ-INMI1-isl/2020|EPI_ISL_410545|2020-01-29
 header_prefix=">NS|"
 file_suffix = "_NS"
 
-file_str = args.output + "/" + args.file_prefix + file_suffix +".fasta"
 
 # write fasta with all sequences
-evol_run._write_fasta(outputfile=file_str, header_prefix=header_prefix, species_dict=time_trajectory)
+df_NS = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory)
+df_NS["true_N"] = df_NS["sampled_N"]
 
-# create files for subsampling
-#for s_abs in
+# write fasta with all absolute subsample
+if args.sub_abs is not None:
+    for s_abs in args.sub_abs:
+        print("---  Subsample sequence set taking " + str(s_abs) + " ---")
+        header_prefix = header_prefix=">WS|" + str(s_abs) + "|"
+        file_suffix = "_WSABS_"+ str(s_abs)
+        df_WS_abs = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=time_trajectory, sub_abs=s_abs)
+        df_WS_abs["true_N"] = df_NS["true_N"]
 
 
-# Bin sampled tips
-# Sizes of each sampled tip set
-#sampling_sizes = [len(s) for s in tipsList]
+# write fasta with all relative subsample
+if args.sub_rel is not None:
+    ts = range(args.t_final)
+    for s_rel in args.sub_rel:
+        print("--- Subsample sequence set taking " + str(s_rel) + " ---")
+        header_prefix = header_prefix=">WS|" + str(s_rel) + "|"
+        file_suffix = "_WSREL_"+ str(s_rel)
+        # total sample set size
+        subsample_size = round(sum(df_NS["true_N"]) * s_rel)
+
+        # sampling without replacement from which time point the sequences are coming (weighted by the number seqs)
+        time_subset = random.sample(ts, k=subsample_size, counts=df_NS["true_N"])
+        subsampled_time_trajectory = []
+        for t in ts:
+            #sampling the particular sequences for each time point without replacemenet
+            seq_subset = random.sample(list(time_trajectory[t].keys()), counts=time_trajectory[t].values(), k=time_subset.count(t))
+
+            # counts sampled sequences
+            time_trajectory_sub = {}
+            for s in seq_subset:
+                time_trajectory_sub[s] = time_trajectory_sub.get(s, 0) + 1
+            subsampled_time_trajectory.append(time_trajectory_sub)
+
+        df_WS_rel = wr._write_fasta(file_suffix=file_suffix, header_prefix=header_prefix, species_dict=subsampled_time_trajectory)
+        df_WS_rel["true_N"] = df_NS["true_N"]
+
+print(os.getcwd())
