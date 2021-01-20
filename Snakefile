@@ -59,7 +59,6 @@ rule samtools_dict:
 	shell:
 		"samtools dict {input} -o {output}"
 
-
 rule minimap_index_ref:
 	input:
 		expand("{reference}", reference=config["consensus"])
@@ -107,11 +106,23 @@ rule index_bam:
 	shell:
 		"samtools index {input} 2> {log}"
 
+rule samtools_idxstats:
+	input:
+		"results/bam/{sample}-sorted.bam"
+	output:
+		"results/bam/{sample}-sorted-stats.txt"
+	conda:
+		"env/env.yml"
+	log:
+		"logs/idxstats_{sample}.log"
+	shell:
+		"samtools idxstats {input} > {output}"
 
 rule run_binning:
 	input:
 		bam = expand("results/bam/{sample}-sorted.bam", sample=basefilename),
-		bai = expand("results/bam/{sample}-sorted.bam.bai", sample=basefilename)
+		bai = expand("results/bam/{sample}-sorted.bam.bai", sample=basefilename),
+		stats = expand("results/bam/{sample}-sorted-stats.txt", sample=basefilename)
 	output:
 		files_list = "results/bins/list_of_binnings.tsv",
 		meta = "results/meta/meta_dates.tsv"
