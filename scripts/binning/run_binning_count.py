@@ -14,9 +14,9 @@ import os
 import csv
 import subprocess
 
-
+print(os.getcwd())
 file_name = snakemake.input.bam[0]
-RESULT_PATH = Path(file_name).parent.parent
+RESULT_PATH = Path(os.getcwd()) / "results"
 bins_dir = RESULT_PATH / "bins"
 meta_dir = RESULT_PATH / "meta"
 SAM_PATH = file_name # Main big SAM or BAM file

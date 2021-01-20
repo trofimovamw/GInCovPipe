@@ -26,9 +26,8 @@ from parameter_est import parameterEstimation
 #
 #matplotlib.rc('font', **font)
 # Output path
-od = Path(snakemake.output[0])
-out_dir = od.parent
-RESULT_PATH = Path(od).parent.parent
+out_dir = Path(snakemake.output[0]).parent
+RESULT_PATH = Path(os.getcwd()) / "results"
 bins_dir = RESULT_PATH / "bins"
 head_dir = bins_dir
 
