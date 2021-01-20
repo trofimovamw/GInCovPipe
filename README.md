@@ -70,29 +70,18 @@ conda install snakemake
 
 ### 2. Initialize the pipeline
 
-As input the pipeline requires names of the sequence file and the reference genome, binning parameters and so on.
+As input the pipeline requires names of the sequence file and the reference genome, and binning parameters.
 These variables are stored in [`config.yaml`](./config.yaml) and used as wildcards to create and link files with each other or as parameters for the binning.
 
 #### 2.1 Raw sequences
-The pipeline requires a file containing sequences, either with the date in the sequence-name or in a seperate file (as described earlier).
-It is possible to provide one file of each type (date in seq.name/date in meta-file), however, it is currently not possible to run the pipeline with multiple input files of the same type.
+The pipeline requires a file containing sequences, with the date in the sequence-name in GISAID format (date in format "%Y-%m-%d" at the end of header after a vertical bar).
 
-- For sequence files containing the date within the sequence-name, move the file containing your sequences into the folder [`raw`](./raw).
-Copy its filename (without extension) and paste it into the variable **samples** on line 1 of [`config.yaml`](./config.yaml):
+For sequence files containing the date within the sequence-name, copy the file path and paste it into the variable **samples** of [`config.yaml`](./config.yaml):
 
   ```
-  samples: "gisaid_cov2020_sequences-300320"
+  samples: "path/to/sequences/data"
   ```
-
-- For sequence files containing the date in a seperate tsv-file, make sure that both files have the same basename.
-Then move both files (.fasta and .tsv) into the folder [`raw`](./raw).
-Copy its filename (without extension) and paste it into the variable **samples_meta** on line 2 of [`config.yaml`](./config.yaml):
-
-  ```
-  samples_meta: "SARS-CoV-2"
-  ```
-
-If you run the pipeline with only one file, add an empty string to the other variable
+If the headers in the sequence file do not contain the date, you can add it to headers using a script provided (TODO!).
 
 #### 2.2 Reported cases data file
 
@@ -101,21 +90,19 @@ To compare estimated population dynamics with reported active cases, include a t
   ```
   reported_cases: ["reported_cases.csv","\t","date","active_cases","%m/%d/%y"]
   ```
-  
+
 where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, followed by date column name, active cases column name and a format the date is stored in.
 
 #### 2.3 Reference consensus sequence
-A reference consensus sequence is provided by the pipeline.
-If you want to use a different consensus sequence, move the sequence into the folder [`consensus`](./consensus).
-Further copy and paste its filename (without extension) into the variable **consensus** on line 3 of [`config.yaml`](./config.yaml).
+Copy and paste the file path of reference/consensus sequence into the variable **consensus** of [`config.yaml`](./config.yaml).
 
   ```
-  consensus: "ref_consensus"
+  consensus: "path/to/consensus/sequence"
   ```
 
 #### 2.4 Binning parameters
 You also have to set the parameters for some of the binning methods in [`config.yaml`](./config.yaml).
-You can set the number of sequences per bin on line 5, and the number of days on line 6.
+You can set the number of sequences per bin, and the number of days.
 Parameters should be given as a list. Additionally, minimal bin size and maximal days span should be
 provided.
 
@@ -126,7 +113,7 @@ min_bin_size: 15
 max_days_span: 21
 ```
 
-
+If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (5%, 7%, 10%, 20%) is used.
 
 ### 3. Run
 
@@ -134,9 +121,9 @@ To run the pipeline, go to Snakemake directory (where the Snakefile is) and acti
 
 
 ```
-snakemake --use-conda --snakefile Snakefile --cores 2
+snakemake --use-conda --snakefile Snakefile --configfile path/to/config.yaml -j -d path/to/workdir
 ```
 
-The ---use-conda parameter allows Snakemake to install packages that are listed in the environment file [`env.yml`](./env/env.yml). The --cores parameter defines how many CPUs the pipeline will use.
+The ---use-conda parameter allows Snakemake to install packages that are listed in the environment file [`env.yml`](./env/env.yml). With parameter --configfile you can give the configuration file [`config.yml`], described above. The -j parameter determines the number of available CPU cores to use in the pipeline. Optionally you can provide the number of cores, e.g. -j 4. With parameter -d you can set the work directory, i.e. where the results of the pipeline are written to.
 
 Output of each pipeline step can be found in folder **results**.

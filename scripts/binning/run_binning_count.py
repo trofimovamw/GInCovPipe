@@ -9,20 +9,36 @@ Created on Wed Mar 25 16:24:55 2020
 
 from pathlib import Path
 from sam_to_bins_modular import SAM
+import math
 import pandas as pd
 import os
 import csv
 import subprocess
 
-FILEPATH = Path(__file__).parent
 file_name = snakemake.input.bam[0]
-FILEPATH_interm = FILEPATH.parent
-bins_dir = FILEPATH_interm.parent / "results" / "bins"
-meta_dir = FILEPATH_interm.parent / "results" / "meta"
-SAM_PATH = FILEPATH_interm.parent / file_name # Main big SAM or BAM file
-WORKING_PATH = FILEPATH_interm.parent
+RESULT_PATH = Path(os.getcwd()) / "results"
+bins_dir = RESULT_PATH / "bins"
+meta_dir = RESULT_PATH / "meta"
+SAM_PATH = file_name # Main big SAM or BAM file
+WORKING_PATH = RESULT_PATH
 
 num_per_bin = snakemake.params.eq_num
+# If no explicit binning desired - use default fractions
+if not num_per_bin:
+    # Read table containing file statistics created by samtools
+    stats = pd.read_table(str(stats_name),delimiter='\t',header=None)
+    num_reads = stats.iloc[0,2]
+    num_per_bin.append(int(math.floor(num_reads*0.05)))
+    num_per_bin.append(int(math.floor(num_reads*0.07)))
+    num_per_bin.append(int(math.floor(num_reads*0.1)))
+    num_per_bin.append(int(math.floor(num_reads*0.2)))
+    print("No sizes for binning by equal size provided, binning will use the\n following default size fractions:\n")
+    print("      * 5%%, or %i sequences" % int(num_per_bin[0]))
+    print("      * 7%%, or %i sequences" % int(num_per_bin[1]))
+    print("      * 10%%, or %i sequences" % int(num_per_bin[2]))
+    print("      * 20%%, or %i sequences" % int(num_per_bin[3]))
+    print('-'*80)
+    
 days_per_bin = snakemake.params.eq_days
 param1 = num_per_bin[0]
 param2 = days_per_bin[0]
@@ -50,8 +66,8 @@ for param in days_per_bin:
     sam.bin_eq_days()
     print('\n')
     print('-'*80)
-    print("Bins with equal number of days (fuzzy)")
-    print('-'*80)
+    #print("Bins with equal number of days (fuzzy)")
+    #print('-'*80)
     #sam.bin_eq_days(fuzzy=True)
 
 print('\n')

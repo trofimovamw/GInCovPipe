@@ -5,7 +5,7 @@ Created on Tue Mar  3 17:19:40 2020
 
 @authors: Yannick Duport, Maria Trofimova
 
-Getting base counts with pysam and binning routine example
+Getting base counts with pysam and binning routine 
 """
 import csv
 import datetime
