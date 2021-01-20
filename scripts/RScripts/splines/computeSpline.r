@@ -20,7 +20,7 @@ for(p in c("ggplot2", "mgcv","grid","gridExtra")) {
 
 #Read in arguments
 args = commandArgs(trailingOnly = TRUE)
-if(length(args) < 4) {
+if(length(args) < 8) {
   cat("\nCall the script with 4 arguments: estimatesFile reportedCasesFile label outputFile\n\n
 The first input file contains a tab separated table with headers and has at least 3 columns: \n
 t value variance.\n\n
@@ -38,17 +38,28 @@ cat(c("Arguments: ", args, "\n"), sep = "\n")
 # set the absolute paths
 inputFile<-normalizePath(args[1])
 
-casesFile<-normalizePath(args[2])
+#cases.list<- args[2]
+table_name = args[2]
+table_delim = args[3]
+table_date_col = args[4]
+table_active_col = args[5]
+table_date_format = args[6]
+country = toString(args[7])
+outputFile<-file.path(args[8])
 
-country = toString(args[3])
-
-outputFile<-file.path(args[4])
-
-cases.table = read.table(casesFile, header=T, sep=",")
-
+cases.table = read.table(normalizePath(table_name), header=T, sep=table_delim)
 input.table = read.table(inputFile, header=T, sep = "\t")
 
+# Define output file and output directory
+fileName<-basename(outputFile)
+outputDir<-normalizePath(dirname(outputFile))
 
+if(!dir.exists(outputDir)) 
+  dir.create(outputDir, showWarnings = FALSE, recursive = TRUE)
+
+outputFile<-paste0(normalizePath(outputDir),"/",fileName)
+
+### All absolute paths are set, change working directory
 # set working directory to call other R Scripts
 getScriptPath <- function(){
   cmd.args <- commandArgs()
@@ -58,30 +69,27 @@ getScriptPath <- function(){
   if(length(script.dir) > 1) stop("can't determine script dir: more than one '--file' argument detected")
   return(script.dir)
 }
-
 this.dir <- getSrcDirectory(function(x) {x})
-
 if (rstudioapi::isAvailable()) {
   this.dir <- dirname(rstudioapi::getActiveDocumentContext()$path)
 }else {
   this.dir <- getScriptPath()
 }
 setwd(this.dir)
-#getwd()
 
 # load other r routines
 source("splineRoutines.r")
 source("plotRoutines.r")
 source("dateFormatRoutines.r")
 
-# Define output file and output directory
-fileName<-basename(outputFile)
-outputDir<-dirname(outputFile)
 
-if(!dir.exists(outputDir)) 
-  dir.create(outputDir, showWarnings = FALSE, recursive = TRUE)
 
-outputFile<-paste0(normalizePath(outputDir),"/",fileName)
+# change column names as they can be chosen flexibly, but we require date and new_cases
+names(cases.table)[names(cases.table) == table_date_col] <- "date"
+names(cases.table)[names(cases.table) == table_active_col] <- "new_cases"
+
+#change date format to yyy-mm-dd
+cases.table$date <- as.Date(cases.table$date, table_date_format)
 
 # Compute the splines and dot sizes
 input.table$t <- as.days_since_d0(input.table$meanBinDate)

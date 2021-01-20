@@ -7,7 +7,7 @@ import os
 
 report: "report/workflow.rst"
 
-configfile: "config.yaml"
+#configfile: "config.yaml"
 
 basefilename = os.path.basename(config["samples"])[:-6]
 
@@ -158,11 +158,17 @@ rule splines:
 		infile = "results/plots/table_merged_thetas_var_from_size.tsv"
 	params:
 		rep_cases = config["reported_cases"][0],
+		table_delim = config["reported_cases"][1],
+		date_col = config["reported_cases"][2],
+		cases_col = config["reported_cases"][3],
+		date_format = config["reported_cases"][4],
 		group = config["group"]
 	conda:
 		"env/env.yml"
 	output:
 		result = "results/splines/out_spline.pdf",
-		abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
+		#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 	shell:
-		"Rscript scripts/Rscripts/splines/computeSpline.R {input.infile} {params.rep_cases} {params.group} {output.abs_path}"
+		"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeSpline.R {input.infile} \
+		{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
+		{params.date_format} {params.group} {output.result}"

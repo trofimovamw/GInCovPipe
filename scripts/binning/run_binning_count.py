@@ -15,14 +15,12 @@ import os
 import csv
 import subprocess
 
-FILEPATH = Path(__file__).parent
 file_name = snakemake.input.bam[0]
-stats_name = snakemake.input.stats[0]
-FILEPATH_interm = FILEPATH.parent
-bins_dir = FILEPATH_interm.parent / "results" / "bins"
-meta_dir = FILEPATH_interm.parent / "results" / "meta"
-SAM_PATH = FILEPATH_interm.parent / file_name # Main big SAM or BAM file
-WORKING_PATH = FILEPATH_interm.parent
+RESULT_PATH = Path(os.getcwd()) / "results"
+bins_dir = RESULT_PATH / "bins"
+meta_dir = RESULT_PATH / "meta"
+SAM_PATH = file_name # Main big SAM or BAM file
+WORKING_PATH = RESULT_PATH
 
 num_per_bin = snakemake.params.eq_num
 # If no explicit binning desired - use default fractions
