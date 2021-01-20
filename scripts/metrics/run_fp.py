@@ -25,16 +25,12 @@ from parameter_est import parameterEstimation
 #        'size'   : 10}
 #
 #matplotlib.rc('font', **font)
-
-
-FILEPATH = Path(__file__).parent
-FILEPATH_interm = FILEPATH.parent
-bins_dir = FILEPATH_interm.parent / "results" / "bins"
-head_dir = FILEPATH_interm.parent / "results" / "bins"
 # Output path
-od = snakemake.output[0]
-od_split = od.split("/table")
-out_dir = FILEPATH_interm.parent / od_split[0]
+od = Path(snakemake.output[0])
+out_dir = od.parent
+RESULT_PATH = Path(od).parent.parent
+bins_dir = RESULT_PATH / "bins"
+head_dir = bins_dir
 
 # Reference location
 reference = str(snakemake.params.ref)
@@ -52,7 +48,7 @@ table_delim = snakemake.params.rep_cases[1]
 table_date_col = snakemake.params.rep_cases[2]
 table_active_col = snakemake.params.rep_cases[3]
 table_date_format = snakemake.params.rep_cases[4]
-table_path = FILEPATH_interm.parent / "reported_cases" / str(table_name)
+table_path = RESULT_PATH / "reported_cases" / str(table_name)
 
 # Base frequency cutoff
 freqCutoff = snakemake.params.cutoff
@@ -62,8 +58,6 @@ min_bin_size = snakemake.params.min_bin_size
 min_days_span = snakemake.params.min_days_span
 max_days_span = snakemake.params.max_days_span
 
-
-WORKING_PATH = FILEPATH_interm.parent
 
 list_binnings = os.listdir(str(bins_dir))
 binnings = []
