@@ -21,13 +21,17 @@ for(p in c("ggplot2", "mgcv","grid","gridExtra")) {
 #Read in arguments
 args = commandArgs(trailingOnly = TRUE)
 if(length(args) < 8) {
-  cat("\nCall the script with 4 arguments: estimatesFile reportedCasesFile label outputFile\n\n
-The first input file contains a tab separated table with headers and has at least 3 columns: \n
+  cat("\nCall the script with 4 arguments: estimatesFile reportedCasesFile delim dateColumName newCasesColumnName dateFormat label outputFile\n\n
+1. The estimates file contains a tab separated table with headers and has at least 3 columns: \n
 t value variance.\n\n
-The second input file is a comma separated file and contains a table with reported cases on each date. Columns must be named: \n
-date new_cases \n\n
-The third argument is a label, e.g. country or city.\n\n
-The fourth argument is the output path. The output tables are written to the given output directory,
+2. The reported cases file contains a table with reported cases on each date. \n
+The separator and the column names can be chosen arbitrarily and are defined with the following parameters.\n\n
+3. Delim gives the delimiter in the reported cases table. \n\n
+4. The column name for the the date in the reported cases table. \n\n
+5. The column name for the the number of cases in the reported cases table. \n\n
+6. The format of the date, e.g. %Y-%m-%d. \n\n
+7. A label for the data set, e.g. a country or city.\n\n
+8. The output path. The output tables are written to the given directory,
       which is created if it does not exist yet.\n")
   #terminate without saving workspace
   quit("no")
