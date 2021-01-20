@@ -90,7 +90,7 @@ To compare estimated population dynamics with reported active cases, include a t
   ```
   reported_cases: ["reported_cases.csv","\t","date","active_cases","%m/%d/%y"]
   ```
-  
+
 where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, followed by date column name, active cases column name and a format the date is stored in.
 
 #### 2.3 Reference consensus sequence
@@ -113,7 +113,7 @@ min_bin_size: 15
 max_days_span: 21
 ```
 
-If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (5%, 7%, 10%, 20%) is used. 
+If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (5%, 7%, 10%, 20%) is used.
 
 ### 3. Run
 
@@ -121,9 +121,9 @@ To run the pipeline, go to Snakemake directory (where the Snakefile is) and acti
 
 
 ```
-snakemake --use-conda --snakefile Snakefile --cores 2
+snakemake --use-conda --snakefile Snakefile --configfile path/to/config.yaml -j -d path/to/workdir
 ```
 
-The ---use-conda parameter allows Snakemake to install packages that are listed in the environment file [`env.yml`](./env/env.yml). The --cores parameter defines how many CPUs the pipeline will use.
+The ---use-conda parameter allows Snakemake to install packages that are listed in the environment file [`env.yml`](./env/env.yml). With parameter --configfile you can give the configuration file [`config.yml`], described above. The -j parameter determines the number of available CPU cores to use in the pipeline. Optionally you can provide the number of cores, e.g. -j 4. With parameter -d you can set the work directory, i.e. where the results of the pipeline are written to.
 
 Output of each pipeline step can be found in folder **results**.
