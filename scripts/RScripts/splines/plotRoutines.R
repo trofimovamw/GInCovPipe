@@ -643,26 +643,25 @@ plotRzero <- function(spline.deriv.table, infPer, theta.table, outputFile) {
   p_spline_d1 <- ggplot() +
     geom_ribbon(aes(x=days.as.Date(spline.deriv.table$t, minDate), ymin = spline.deriv.table$lower, ymax = spline.deriv.table$upper), fill = "pink",alpha=0.6) +
     geom_line(aes(x=days.as.Date(spline.deriv.table$t, minDate),y=spline.deriv.table$value), color="darkred", size = 2, alpha=1.0)+
-    geom_hline(yintercept=1.0, linetype = "dashed", color="darkgray")
-  p_spline_d1 <- p_spline_d1 + theme(
+    geom_hline(yintercept=1.0, linetype = "dashed", color="darkgray") + ylab(expression(paste("est. ",R[0])))
+  p_spline_d1 <- p_spline_d1 + scale_x_date(date_breaks = "2 months" , date_labels = "%Y-%m-%d") + theme(
     legend.title = element_blank(),
     #axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
     #axis.text = element_text(size=22),
     #axis.title = element_text(size=24,face="bold"),
     #legend.text = element_text(size=22),
-    legend.text = element_text(size=15),
-    axis.text = element_text(size=18),
+    legend.text = element_text(size=18),
+    axis.title.y = element_text(size=20),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.background = element_blank(),
-    axis.line = element_line(colour = "black"),
-    axis.text.x = element_blank(),
+    axis.text = element_text(size=18),
     axis.title.x = element_blank(),
-    axis.ticks.x = element_blank()
+    axis.line = element_line(colour = "black")
   )
   
   ggsave(p_spline_d1,
-         height = 8,
+         height = 6,
          width = 16,
          dpi = 220,
          device = "pdf",
