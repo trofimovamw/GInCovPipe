@@ -10,11 +10,8 @@ Created on Mon Nov 30 12:50:41 2020
 import math
 import numpy as np
 import random
-import pandas as pd
-from Bio import Phylo
 from Bio import SeqIO
 from scipy.stats import binom
-import csv
 from bitarray import bitarray
 
 

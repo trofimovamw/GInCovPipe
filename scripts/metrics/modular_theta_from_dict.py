@@ -16,9 +16,7 @@ Pages 2040–2052, https://doi.org/10.1093/molbev/msz081
 Metrics from bins
 """
 import numpy as np
-
 import math
-
 from scipy import optimize
 
 

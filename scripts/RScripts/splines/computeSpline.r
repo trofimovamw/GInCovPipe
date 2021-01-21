@@ -9,12 +9,12 @@ dynamic_require <- function(package){
   if(eval(parse(text=paste("require(",package,")"))))
     return(TRUE)
 
-  install.packages(package)
+  install.packages(package,repos='http://cran.us.r-project.org')
   return (eval(parse(text=paste("require(",package,")"))))
 }
 
 #"ggformula"
-for(p in c("ggplot2", "mgcv","grid","gridExtra")) {
+for(p in c("ggplot2", "mgcv","grid","gridExtra","gratia","rstudioapi")) {
   dynamic_require(p)
 }
 
@@ -89,10 +89,12 @@ names(cases.table)[names(cases.table) == table_date_col] <- "date"
 names(cases.table)[names(cases.table) == table_active_col] <- "new_cases"
 
 #change date format to yyy-mm-dd
+# minDate to use in all plotted tables
+minDate = min(as.Date(cases.table$date, table_date_format))
 cases.table$date <- as.Date(cases.table$date, table_date_format)
 
 # Compute the splines and dot sizes
-input.table$t <- as.days_since_d0(input.table$meanBinDate)
+input.table$t <- as.days_since_global_d0(input.table$meanBinDate,minDate)
 pointSize <- c()
 for (i in (1:nrow(input.table))) {
   # rand*(UB1-LB1) + LB1
@@ -105,7 +107,16 @@ input.table$pointSize <- pointSize
 
 spline.table <- computeSplineTable(input.table)
 
-plotSpline(input.table, spline.table, outputFile)
+
+# Calculate spline derivatives for Rnaught plot
+infPer = 5
+gam.deriv <- computeSpline(input.table)
+t = input.table$t
+spline.deriv.table <- computeSplineDerivativeTableGratia(t,gam.deriv,infPer)
+
+# Plot R0
+outputFileR0<-paste0(normalizePath(outputDir),"/","rnaught_",fileName)
+plotRzero(spline.deriv.table, infPer, input.table, outputFileR0) 
 
 # Replace negative number of new cases with 0 - happens if calculated from cumulative confirmed
 # cases count
@@ -116,9 +127,19 @@ if (!"new_cases" %in% colnames(cases.table)) {
   quit("no")}
 
 cases.table$new_cases[cases.table$new_cases<0] <- 0
-cases.table$t <- as.days_since_d0(cases.table$date)
+cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
 
 cases.spline.table <- computeSplineNewCasesTable(cases.table)
+
+# Plot spline with daily new cases data - no negative values
+print("Plotting")
+print(cases.table)
+# With global minDate
+outputFileRC<-paste0(normalizePath(outputDir),"/","rep_cases_",fileName)
+plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, minDate)
+
+# Simple output spline plot 
+plotSpline(input.table, spline.table, outputFile)
 
 # Write spline table
 write.csv(spline.table,paste0(normalizePath(outputDir),"/spline_",country,".csv"), row.names = T)
