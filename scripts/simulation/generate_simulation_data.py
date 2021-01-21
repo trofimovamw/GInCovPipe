@@ -99,7 +99,7 @@ wr.write_reference(evol_run.init_seq)
 
 # header=hCoV-19/Italy/LAZ-INMI1-isl/2020|EPI_ISL_410545|2020-01-29
 header_prefix=">NS|"
-file_suffix = "_NS"
+file_suffix = "NS"
 
 
 # write fasta with all sequences
@@ -114,7 +114,7 @@ if args.sub_abs is not None:
     for s_abs in args.sub_abs:
         print("---  Subsample sequence set taking " + str(s_abs) + " ---")
         header_prefix = header_prefix=">WS|" + str(s_abs) + "|"
-        file_suffix = "_WSABS_"+ str(s_abs)
+        file_suffix = "WSABS_"+ str(s_abs)
 
         subsampled_time_trajectory = []
         for t in ts:
@@ -143,7 +143,7 @@ if args.sub_rel is not None:
     for s_rel in args.sub_rel:
         print("--- Subsample sequence set taking " + str(s_rel) + " ---")
         header_prefix = header_prefix=">WS|" + str(s_rel) + "|"
-        file_suffix = "_WSREL_"+ str(s_rel)
+        file_suffix = "WSREL_"+ str(s_rel)
         # total sample set size
         subsample_size = round(sum(df_NS["true_N"]) * s_rel)
 

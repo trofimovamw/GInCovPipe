@@ -58,7 +58,7 @@ class writer:
 		Write the simulated sequences into one fasta file.
 		Returns a table with dates and counts.
 		'''
-		outputfile = self.fasta_path + "/" + self.file_prefix + file_suffix + ".fasta"
+		outputfile = self.fasta_path + "/" + self.file_prefix + "_" + file_suffix + ".fasta"
 		rows_list = []
 
 		start_time = strptime(self.init_date, "%Y-%m-%d").date()
@@ -91,7 +91,7 @@ class writer:
 	    '''
 		Write the table with true and sampled sequence counts for each time step
 		'''
-	    outputfile = self.table_path + "/" + self.file_prefix + file_suffix + ".tsv"
+	    outputfile = self.table_path + "/" + self.file_prefix + "_" + file_suffix + ".tsv"
 	    print("--- Write table into file " + outputfile + "---")
 	    table.to_csv(outputfile, sep="\t", header=True, index=False)
 
@@ -99,7 +99,7 @@ class writer:
 		'''
 		Create the config.yaml for calling the snakemake pipeline
 		'''
-		file_name = self.file_prefix + file_suffix
+		file_name = self.file_prefix + "_" + file_suffix
 		config_file = self.config_path +  "/config_" + file_name + ".yaml"
 		fasta_file = self.fasta_path +  "/" + file_name + ".fasta"
 		table_file = self.table_path +  "/" + file_name + ".tsv"
