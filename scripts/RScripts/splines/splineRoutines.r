@@ -57,7 +57,6 @@ computeSplineDerivativeTableGratia <- function(t, gamToDerive, infDur) {
   #print(exp(as.vector(infDur*ci$upper)))
   d1_gam.table <- data.frame(t=tt.df$t, value=exp(infDur*ci$est), lower=exp(as.vector(infDur*ci$lower)), upper=exp(as.vector(infDur*ci$upper)),
                              si.lower=exp(as.vector(infDur*ci.sim$lower)),si.upper=exp(as.vector(infDur*ci.sim$upper)))
-  print(d1_gam.table)
   return(d1_gam.table)
 }
 

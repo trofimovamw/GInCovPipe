@@ -136,8 +136,7 @@ cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
 cases.spline.table <- computeSplineNewCasesTable(cases.table)
 
 # Plot spline with daily new cases data - no negative values
-print("Plotting")
-print(cases.table)
+
 # With global minDate
 outputFileRC<-paste0(normalizePath(outputDir),"/","rep_cases_",fileName)
 plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, minDate)
