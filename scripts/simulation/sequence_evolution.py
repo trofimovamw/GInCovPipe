@@ -58,7 +58,8 @@ class sequenceEvol:
 			print("Current time t = ", t)
 
 			if self.rand_repl or self.p_repl is None:
-				curr_p_repl = math.sin(t * 0.1) / 20 + 1.05
+				curr_p_repl = math.sin(t * 0.11) / 10 + 1.03
+				#curr_p_repl = math.sin(t * 0.1) / 20 + 1.05
 			else:
 				# Switch the replication rate somewhere in the middle if that is the correct mode (p_repl2!=0)
 				if (self.p_repl2 is not None) and (t >= self.t_switch):

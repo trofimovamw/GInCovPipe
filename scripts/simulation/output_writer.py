@@ -106,7 +106,7 @@ class writer:
 		ref_file =  self.ref_path + "/"+ self.file_prefix+ ".fasta"
 
 		config_dict={"samples":  fasta_file,
-		             "reported_cases" : [table_file, "\t", "date", "true_N", "%Y-%m-%d"],
+		             "reported_cases" : [table_file, "\t", "date", "sampled_N", "%Y-%m-%d"],
 		             "consensus": ref_file,
 		             "number_per_bin": [50, 100, 150],
 		             "days_per_bin": [2, 4, 6, 8, 10],
