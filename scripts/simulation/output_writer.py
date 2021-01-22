@@ -114,7 +114,7 @@ class writer:
 		             "min_days_span": 2,
 		             "max_days_span": 20,
 		             "freq_cutoff": 2,
-		             "group": file_suffix
+		             "group": file_name
 		             }
 
 		#dict_file = [{'sports': ['soccer', 'football', 'basketball', 'cricket', 'hockey', 'table tennis']},
