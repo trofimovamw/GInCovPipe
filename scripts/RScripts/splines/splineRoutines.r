@@ -35,6 +35,31 @@ computeSplineDerivativeTable <- function(t, gamToDerive) {
   return(d1_gam.table)
 }
 
+# Using gratia package - compute confidence interval on the derivatives
+# t, time points for which to infer the derivative
+# gamToDerive, the spline/gam for which the derivatives are inferred
+computeSplineDerivativeTableGratia <- function(t, gamToDerive, infDur) {
+  tt.df = data.frame(t=t)
+  #print(t)
+  deriv <- fderiv(gamToDerive,tt.df)
+  #print(deriv)
+  #print(smooths(gamToDerive))
+  # Normal CI
+  ci <- confint(deriv, type = "confidence")
+  #print(ci)
+  # Simultaneous CI
+  ci.sim <- confint(deriv, type = "simultaneous", nsim = 2500)
+  # Size of interval
+  ci.size <- ci.sim$est-ci.sim$lower
+  #print(tt.df$t)
+  #print(exp(as.vector(infDur*ci$lower)))
+  #print(exp(as.vector(infDur*ci$upper)))
+  d1_gam.table <- data.frame(t=tt.df$t, value=exp(infDur*ci$est), lower=exp(as.vector(infDur*ci$lower)), upper=exp(as.vector(infDur*ci$upper)),
+                             si.lower=exp(as.vector(infDur*ci.sim$lower)),si.upper=exp(as.vector(infDur*ci.sim$upper)))
+  return(d1_gam.table)
+}
+
+
 #generate random values from a multivariate normal distribution
 random_mvn <- function(n, mu, sig) {
   L <- mroot(sig)

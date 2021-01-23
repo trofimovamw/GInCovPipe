@@ -216,9 +216,9 @@ for folder in binnings:
     plot_title = "Population size estimate %s" % folder
     fig, ax1 = plt.subplots()
     ax1.set_title("%s" % plot_title)
-    ax1.plot(mean_header_bin, np.array(thetas)/np.array(num_days_per_bin), '-', color='royalblue')
+    ax1.plot(mean_header_bin, np.array(thetas), '-', color='royalblue')
     ax1.set_xlabel('Mean bin date')
-    ax1.set_ylabel(r'$\frac{\theta_{est}}{\Delta_{t}}$')
+    ax1.set_ylabel(r'$\theta_{est}$')
     ax1.set_xticks(mean_header_bin[::10])
     ax1.set_xticklabels(mean_header_bin[::10])
     name = str(out_dir)+"/plot_"+folder+"_thetas.png"
@@ -286,6 +286,6 @@ with open(table_path, 'w+', newline='') as csvfile:
         # If bin size==1/variance is bigger or equal to min_bin_size
         #if maxsize, minsize satisfied 
         if variance_sizem[i]<=1/int(min_bin_size) and num_days_per_binm[i]>=min_days_span and num_days_per_binm[i]<=max_days_span:
-            writer.writerow([times[i],thetasm[i]/(num_days_per_binm[i]+1),thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i]])
+            writer.writerow([times[i],thetasm[i],thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i]])
         
 print("Done.\n")

@@ -63,25 +63,24 @@ rescale <- function(x, minX, maxX, minY, maxY) {
   return((maxY-minY)*(x - minX)/(maxX-minX) + minY)
 }
 
-plotSplineWithNewCases <-function(data.table, spline.table, outputFile) {
+plotSplineWithNewCases <-function(data.table, input.table, spline.table, outputFile, minDate) {
   
-  minX <- max(min(spline.table$value_trueN),0)
-  maxX <- max(spline.table$value_trueN)
+  minX <- max(min(data.table$new_cases),0)
+  maxX <- max(data.table$new_cases)
   minY <- max(min(spline.table$value),0)
   maxY <- max(spline.table$value)
-  ylimMax <- max(data.table$value)
-  minDate <- min(as.Date(data.table$meanBinDate))
+  ylimMax <- max(data.table$new_cases)
   mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
-    geom_point(aes(days.as.Date(data.table$t, minDate), rescale(data.table$trueN, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
-    geom_point(aes(x=days.as.Date(data.table$t, minDate), y=data.table$value), colour=mycolors["esti"], size=data.table$pointSize, alpha=0.3)+
+    geom_line(aes(days.as.Date(data.table$t, minDate), rescale(data.table$new_cases, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
+    geom_point(aes(x=days.as.Date(input.table$t, minDate), y=input.table$value), colour=mycolors["esti"], size=input.table$pointSize, alpha=0.3)+
     #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
-    geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=rescale(spline.table$value_trueN, minX, maxX, minY, maxY)), color=mycolors["true"], size = 2, alpha=0.5)+
+    #geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=rescale(spline.table$value_trueN, minX, maxX, minY, maxY)), color=mycolors["true"], size = 2, alpha=0.5)+
     geom_line(aes(x=days.as.Date(spline.table$t, minDate), y=spline.table$value), color=mycolors["esti"], size = 2, alpha=0.5)+
     scale_size_continuous(range = c(min(data.table$pointSize), max(data.table$pointSize))) +
     scale_y_continuous(
-      expression(paste(theta[est],"\\",Delta,"t","\n")),
+      expression(paste(theta[est])),
       #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
       sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "new reported cases\n")) +
     xlab("")+
@@ -633,4 +632,39 @@ plotDerivativesBoxPLot <- function(spline.deriv.table,outputFile) {
            device = "pdf",
            file = outputFile)
 
+}
+
+plotRzero <- function(spline.deriv.table, infPer, theta.table, outputFile) {
+  minDate <- min(as.Date(theta.table$meanBinDate))
+  maxDate <- max(days.as.Date(spline.table$t, minDate))
+  
+  maxR <- max(spline.deriv.table$value) + 0.25*max(spline.deriv.table$value)
+  minR <- min(spline.deriv.table$value) - 0.25*min(spline.deriv.table$value)
+  p_spline_d1 <- ggplot() +
+    geom_ribbon(aes(x=days.as.Date(spline.deriv.table$t, minDate), ymin = spline.deriv.table$lower, ymax = spline.deriv.table$upper), fill = "pink",alpha=0.6) +
+    geom_line(aes(x=days.as.Date(spline.deriv.table$t, minDate),y=spline.deriv.table$value), color="darkred", size = 2, alpha=1.0)+
+    geom_hline(yintercept=1.0, linetype = "dashed", color="darkgray") + ylab(expression(paste("est. ",R[0])))
+  p_spline_d1 <- p_spline_d1 + scale_x_date(date_breaks = "2 months" , date_labels = "%Y-%m-%d") + theme(
+    legend.title = element_blank(),
+    #axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+    #axis.text = element_text(size=22),
+    #axis.title = element_text(size=24,face="bold"),
+    #legend.text = element_text(size=22),
+    legend.text = element_text(size=18),
+    axis.title.y = element_text(size=20),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size=18),
+    axis.title.x = element_blank(),
+    axis.line = element_line(colour = "black")
+  )
+  
+  ggsave(p_spline_d1,
+         height = 6,
+         width = 16,
+         dpi = 220,
+         device = "pdf",
+         file = outputFile)
+  
 }

@@ -16,6 +16,7 @@ import csv
 import subprocess
 
 file_name = snakemake.input.bam[0]
+stats_name = snakemake.input.stats[0]
 RESULT_PATH = Path(os.getcwd()) / "results"
 bins_dir = RESULT_PATH / "bins"
 meta_dir = RESULT_PATH / "meta"

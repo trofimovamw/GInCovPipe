@@ -25,6 +25,12 @@ as.days_since_d0 <- function(dates) {
   return(as.numeric(dates - minDate))
 }
 
+as.days_since_global_d0 <- function(dates,minDate) {
+  dates <- as.Date(dates)
+  #minDate <- min(dates)
+  return(as.numeric(dates - minDate))
+}
+
 days.as.Date <- function(days, minDate) {
   return(as.Date(as.Date(minDate) + days))
 }
