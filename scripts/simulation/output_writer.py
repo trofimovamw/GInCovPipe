@@ -4,6 +4,8 @@ from pathlib import Path
 from yaml import dump
 import datetime
 strptime = datetime.datetime.strptime
+import uuid
+
 
 class writer:
 	'''
@@ -70,11 +72,14 @@ class writer:
 
 			for spec_dict in species_dict:
 				date = start_time + datetime.timedelta(days=t)
-				header = header_prefix + str(date.strftime("%Y-%m-%d"))
+
 				sampled_N = 0
 				for seq, num in spec_dict.items():
 					sampled_N += num
-					file.write((header + "\n" + seq + "\n") * num)
+					for _ in range(num):
+						# add unique id to sequence
+						header = header_prefix +"|"+ str(uuid.uuid4()) + "|" + str(date.strftime("%Y-%m-%d"))
+						file.write(header + "\n" + seq + "\n")
 
 				# faster way to add rows to a df
 				dict1 = {"t": t, "date": date, "sampled_N": sampled_N}
@@ -106,9 +111,10 @@ class writer:
 		ref_file =  self.ref_path + "/"+ self.file_prefix+ ".fasta"
 
 		config_dict={"samples":  fasta_file,
-		             "reported_cases" : [table_file, "\t", "date", "sampled_N", "%Y-%m-%d"],
+		            # "reported_cases" : [table_file, "\t", "date", "sampled_N", "%Y-%m-%d"],
+		             "reported_cases": [table_file, "\t", "date", "true_N", "%Y-%m-%d"],
 		             "consensus": ref_file,
-		             "number_per_bin": [50, 100, 150],
+		             "number_per_bin": [],
 		             "days_per_bin": [2, 4, 6, 8, 10],
 		             "min_bin_size": 15,
 		             "min_days_span": 2,

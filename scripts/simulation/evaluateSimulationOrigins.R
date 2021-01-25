@@ -17,27 +17,26 @@ options(scipen = 999)
 #number of simulations
 Nsim=10
 #max size of bins
-Nbins <- 12
+#Nbins <- 12
 
 #growthRate<-"0.52"
 #growthRate_2 <-c("0.49","0.52")
-growthRate<-"1.05"
-growthRate_2 <-c("1.05","0.95")
-switchLikeOrigin<- c("True", "False")
+#growthRate<-"1.05"
+#growthRate_2 <-c("1.05","0.95")
+#switchLikeOrigin<- c("True", "False")
 
-#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_allowMultipleMutatationPerSite"
-#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_sinusRepl_2"
-#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_testNewMLE"
-#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_testOldMLEfirstOccurrence"
-#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_testOldMLEfirstOccurrence_sinoid"
-#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_testNewTotMLEallOccurrence_sinoid"
-
-datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_testOldMLEallOccurrence_sinoid"
-#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_testOldMLEallOccurrence"
-
+#datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/simulation_effPopSize_testOldMLEallOccurrence_sinoid"
+datadir_all <- "/Users/msmith/Documents/RKI/nCov/data/simulation/evo_poi_sinoid"
 
 #mutation_rate, and theta is given by 2*N*mu
 mu=0.0001
+
+datadir_all <- paste0("/Users/msmith/Documents/RKI/nCov/data/simulation/evo_poi_sinoid_pmut_",format(mu, scientific = F),"/thetaTables")
+
+trueN_table_file = paste0(datadir_all, "/table/sim_1_NS.tsv")
+
+trueN_NS.table <- read.table(trueN_table_file, header = T, sep="\t")
+plot(trueN_NS.table$sampled)
 
 # rescale for secons y axis
 rescale <- function(x, minX, maxX, minY, maxY) {

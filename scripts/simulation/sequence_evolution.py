@@ -55,21 +55,21 @@ class sequenceEvol:
 
 		new_set = [self.init_seq]
 		while t < self.t_final:
-			print("Current time t = ", t)
+			#print("Current time t = ", t)
 
 			if self.rand_repl or self.p_repl is None:
-				curr_p_repl = math.sin(t * 0.11) / 10 + 1.03
+				curr_p_repl = math.sin(t * 0.11) / 15 + 1.03
 				#curr_p_repl = math.sin(t * 0.1) / 20 + 1.05
 			else:
 				# Switch the replication rate somewhere in the middle if that is the correct mode (p_repl2!=0)
 				if (self.p_repl2 is not None) and (t >= self.t_switch):
 					curr_p_repl = self.p_repl2
 
-			print("Current replication rate = ", curr_p_repl)
+			#print("Current replication rate = ", curr_p_repl)
 			# draw number of sequences of the next generation
 			curr_N = np.random.poisson(curr_p_repl * curr_N)
 
-			print("Number of new sequences: ", curr_N)
+			#print("Number of new sequences: ", curr_N)
 
 			# collect sequence species for t
 			species_dict = {}
@@ -81,7 +81,7 @@ class sequenceEvol:
 				# if number of new mutation sizes is larger than sites (rare/not likely) take number of sites
 				# (= 2 mutations on one site, ignore back mutation)
 				num_mut_sites = min(np.random.poisson(self.p_mut * curr_N * self.L), curr_N * self.L)
-				print("Number of mutating sites: ",num_mut_sites)
+				#t("Number of mutating sites: ",num_mut_sites)
 
 				if num_mut_sites > 0:
 					#for i in mut_sites:
