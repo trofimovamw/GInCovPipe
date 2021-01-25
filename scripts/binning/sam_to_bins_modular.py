@@ -31,6 +31,8 @@ class SAM:
         self.sam_dict = self._index_dates()
         self.eq_num_param = num_per_bin
         self.eq_days_param = days_per_bin
+        #workaround to make it faster: create for unique sequences a map to its index
+        self.seq_idx_dict = self._create_sequence_map()
 
     def _to_dict(self, l):
         sam_dict = {}
@@ -42,6 +44,18 @@ class SAM:
                 'header': name
             }
         return sam_dict
+
+    def _create_sequence_map(self):
+        '''
+        WORKAROUND: make binning faster, by mapping for each unique sequence its index
+        :return:
+        '''
+        # crate map of each sequence where to find it
+        seq_dict = {}
+        for idx, attr in self.sam_dict.items():
+            if not seq_dict.get(attr['header']):
+                seq_dict[attr['header']] = idx
+        return seq_dict
     
     def _write_dates_meta(self, idx_dates):
         filename = "meta_dates.tsv"
@@ -65,7 +79,9 @@ class SAM:
         for read in self.samfile.fetch(self.seq_name):
             name = read.query_name
             # date_format = "[|]20[\d]{2}\-[\d]{2}\-[\d]{2}"
-            date_format = r"[|]20[\d]{2}\-*\d*-*\d*"
+            #date_format = r"[|]20[\d]{2}\-*\d*-*\d*"
+            # adding negative look behind to allow only for exact 4 digits for year and not more
+            date_format = r"[|]20[\d]{2}(?!\d)\-*\d*-*\d*"
             dt = re.search(date_format, name)
             if dt:
                 dt = dt[0][1:]
@@ -113,7 +129,7 @@ class SAM:
         
         return filenames_bin, filenames_header, filenames_range
 
-    def _write_bins(self, filenames, indices):
+    def _write_bins_old(self, filenames, indices):
         bin_idx = 0
         for filename in filenames:
             print(f"Writing Bin {bin_idx}")
@@ -125,6 +141,40 @@ class SAM:
                     if read.query_name in names:
                         outfile.write(read)
             bin_idx = bin_idx + 1
+
+    def _write_bins(self, filenames, seq_bin_dict):
+        print(f"Writing to bins")
+        for read in self.samfile.fetch(self.seq_name):
+            # https://github.com/pysam-developers/pysam/issues/509!!!
+            read.tid = 0
+            if seq_bin_dict is not None:
+                if read.query_name in seq_bin_dict:
+                    bin_idx = seq_bin_dict[read.query_name]
+                    tmpfile = str(filenames[bin_idx])+".tmp"
+                    if not os.path.exists(tmpfile):
+                        print("Writing bin " + str(bin_idx))
+                        with pysam.AlignmentFile(str(tmpfile), "w", header=self.header) as outfile:
+                            outfile.write(read)
+                    else:
+                        with open(str(tmpfile), 'a') as outfile:
+                            outfile.write((read.to_string()+"\n"))
+        #Workaround: How to append in a BAM file, or how to print binary into a BAM file?
+        print("Convert SAM to BAM")
+        for filename in filenames:
+            tmpfile = str(filename)+".tmp"
+            if os.path.exists(tmpfile):
+                infile = pysam.AlignmentFile(tmpfile, "r")
+                with  pysam.AlignmentFile(filename, "wb", template=infile) as bamfile:
+                    for s in infile:
+                        bamfile.write(s)
+                os.remove(tmpfile)
+            #also create empty bam for downstream stuff
+            #else:
+             #  open(filename, 'w+')
+
+
+
+
 
     def _write_header(self, filenames, indices):
         # uniquify header names
@@ -170,21 +220,28 @@ class SAM:
         n_bins = math.ceil(len(names_unique)/binsize)
 
         filenames_bin, filenames_header, filenames_range  = self._create_filenames(f"eq_size_names_{binsize}", n_bins)
-        for filename in filenames_bin:
-            open(filename, 'w+')
-        
+        #for filename in filenames_bin:
+        #    open(filename, 'w+')
+
         bins_n = [[] for _ in range(n_bins)]
         indices = [[] for _ in range(n_bins)]
+        #workaround to make it faster
+        seq_bin_dict={}
         for i in range(len(names_unique)):
-            bins_n[math.floor(i / binsize)].append(names_unique[i])
+            bin_id = math.floor(i / binsize)
+            bins_n[bin_id].append(names_unique[i])
+            seq_bin_dict[names_unique[i]] = bin_id
         
         for i in range(len(bins_n)):
-            for ii in range(len(bins_n[i])):
-                for j in range(n_reads):
-                    if self.sam_dict[j]['header'] == bins_n[i][ii]:
-                        indices[i].append(j)
+            #for ii in range(len(bins_n[i])):
+            #    for j in range(n_reads):
+            #        if self.sam_dict[j]['header'] == bins_n[i][ii]:
+            #            indices[i].append(j)
+            for seq_name in bins_n[i]:
+                if seq_name in self.seq_idx_dict:
+                    indices[i].append(self.seq_idx_dict[seq_name])
 
-        self._write_bins(filenames_bin, indices)
+        self._write_bins(filenames_bin, seq_bin_dict)
         self._write_header(filenames_header, indices)
 
     def bin_eq_days(self, fuzzy=False):
@@ -223,6 +280,7 @@ class SAM:
         # fill list of indices and bins
         indices = [[] for _ in range(n_bins)]
         curr_bin = 0
+        seq_bin_dict = {}
         for i in range(n_reads):
             curr_day = strptime(self.sam_dict[i]['date'], date_format).date()
             curr_n_days = (curr_day - start_day).days + 1
@@ -236,9 +294,11 @@ class SAM:
                     curr_bin += 1
                     start_day = strptime(self.sam_dict[i]['date'], date_format).date()
             indices[curr_bin].append(i)
+            #workaround to make it faster
+            seq_bin_dict[self.sam_dict[i]['header']] = curr_bin
 
         # write bam-files (1 file per bin)
-        self._write_bins(filenames_bin, indices)
+        self._write_bins(filenames_bin, seq_bin_dict)
         self._write_header(filenames_header, indices)
         self._write_days_ranges(filenames_range, days_ranges)
         
@@ -269,15 +329,18 @@ class SAM:
         indices = [[] for _ in range(n_bins)]
         counter = 0
         curr_year, curr_week = strptime(self.sam_dict[0]['date'], date_format).isocalendar()[:2]
+        seq_bin_dict = {}
         for i in range(n_reads):
             next_year, next_week = strptime(self.sam_dict[i]['date'], date_format).isocalendar()[:2]
             if next_week > curr_week or next_year > curr_year:
                 counter += 1
                 curr_year, curr_week = next_year, next_week
             indices[counter].append(i)
+            # workaround to make it faster
+            seq_bin_dict[self.sam_dict[i]['header']] = counter
 
         # write bam-files (1 file per bin)
-        self._write_bins(filenames_bin, indices)
+        self._write_bins(filenames_bin, seq_bin_dict)
         self._write_header(filenames_header, indices)
         self._write_days_ranges(filenames_range, days_ranges)
         
