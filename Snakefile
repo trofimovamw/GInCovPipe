@@ -147,7 +147,8 @@ rule theta_estimates:
 		rep_cases = config["reported_cases"],
 		min_bin_size = config["min_bin_size"],
 		min_days_span = config["min_days_span"],
-		max_days_span = config["max_days_span"]
+		max_days_span = config["max_days_span"],
+		group = config["group"]
 	conda:
 		"env/env.yml"
 	script:

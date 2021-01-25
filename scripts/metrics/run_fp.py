@@ -41,6 +41,8 @@ with open(str(reference), "r") as file:
 refname = header.strip(">")
 refname = refname.strip("\n")
 
+file_suffix = snakemake.params.group
+
 # Reported cases data
 table_name = snakemake.params.rep_cases[0]
 table_delim = snakemake.params.rep_cases[1]
@@ -228,7 +230,7 @@ for folder in binnings:
     
     
     # Write bin file
-    name_table = "table_"+folder+"_thetas_var_from_size.tsv"
+    name_table = "table_"+file_suffix+"_"+folder+"_thetas_var_from_size.tsv"
     table_path = str(out_dir) + '/' + name_table
     with open(table_path, 'w+', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter='\t',

@@ -8,7 +8,6 @@ rm(list = ls())
 dynamic_require <- function(package){
   if(eval(parse(text=paste("require(",package,")"))))
     return(TRUE)
-
   install.packages(package,repos='http://cran.us.r-project.org')
   return (eval(parse(text=paste("require(",package,")"))))
 }
@@ -56,11 +55,10 @@ input.table = read.table(inputFile, header=T, sep = "\t")
 
 # Define output file and output directory
 fileName<-basename(outputFile)
-outputDir<-normalizePath(dirname(outputFile))
-
+outputDir<- dirname(outputFile)
 if(!dir.exists(outputDir)) 
   dir.create(outputDir, showWarnings = FALSE, recursive = TRUE)
-
+outputDir <- normalizePath(outputDir)
 outputFile<-paste0(normalizePath(outputDir),"/",fileName)
 
 ### All absolute paths are set, change working directory
@@ -98,6 +96,7 @@ minDate = min(as.Date(cases.table$date, table_date_format))
 cases.table$date <- as.Date(cases.table$date, table_date_format)
 
 # Compute the splines and dot sizes
+cat("--- Compute splines ---\n\n")
 input.table$t <- as.days_since_global_d0(input.table$meanBinDate,minDate)
 pointSize <- c()
 for (i in (1:nrow(input.table))) {
@@ -111,7 +110,7 @@ input.table$pointSize <- pointSize
 
 spline.table <- computeSplineTable(input.table)
 
-
+cat("--- Compute Rnaught ---\n\n")
 # Calculate spline derivatives for Rnaught plot
 infPer = 5
 gam.deriv <- computeSpline(input.table)
@@ -119,7 +118,7 @@ t = input.table$t
 spline.deriv.table <- computeSplineDerivativeTableGratia(t,gam.deriv,infPer)
 
 # Plot R0
-outputFileR0<-paste0(normalizePath(outputDir),"/","rnaught_",fileName)
+outputFileR0<-paste0(outputDir,"/","rnaught_",fileName)
 plotRzero(spline.deriv.table, infPer, input.table, outputFileR0) 
 
 # Replace negative number of new cases with 0 - happens if calculated from cumulative confirmed
@@ -145,11 +144,11 @@ cases.spline.table <- computeSplineNewCasesTable(cases.table)
 plotSpline(input.table, spline.table, outputFile)
 
 # Write spline table
-write.csv(spline.table,paste0(normalizePath(outputDir),"/spline_",country,".csv"), row.names = T)
+write.csv(spline.table,paste0(outputDir,"/spline_",country,".csv"), row.names = F, col.names = T)
 # Write reported cases table
-write.csv(cases.table,paste0(normalizePath(outputDir),"/cases_",country,".csv"), row.names = T)
+write.csv(cases.table,paste0(outputDir,"/cases_",country,".csv"), row.names = F, col.names = T)
 # Write reported cases spline table
-write.csv(cases.spline.table,paste0(normalizePath(outputDir),"/cases_spline_",country,".csv"), row.names = T)
+write.csv(cases.spline.table,paste0(outputDir,"/cases_spline_",country,".csv"), row.names = F, col.names = T)
 # Write estimated theta table
-write.csv(input.table,paste0(normalizePath(outputDir),"/theta_",country,".csv"), row.names = T)
+write.csv(input.table,paste0(outputDir,"/theta_",country,".csv"), row.names = F, col.names = T)
 
