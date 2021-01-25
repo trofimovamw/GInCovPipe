@@ -22,9 +22,10 @@ from scipy import optimize
 
 class analyzeTrajectory:
 
-    def __init__(self, dict_traj, initSeq):
+    def __init__(self, dict_traj, mut_proportion, initSeq):
         self.dict_traj = dict_traj
         self.initSeq = initSeq
+        self.mut_proportion = mut_proportion
 
    
     def _makeOriginsFirstOcc(self, mutSeq, mutantsCount):
@@ -186,7 +187,7 @@ class analyzeTrajectory:
 
         for i in range(len(origins)):
             # Get the MLE
-            sol = self._optimize(origins[i], num_mut[i])
+            sol = self._optimize(origins[i], math.floor(self.mut_proportion*num_seqs[i]))
             thetas.append(sol)
 
         for i in range(len(thetas)):

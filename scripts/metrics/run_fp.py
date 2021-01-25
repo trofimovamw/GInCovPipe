@@ -118,7 +118,7 @@ for folder in binnings:
     print("      Done.\n")
     print("      Starting to compute optimal metric parameters...")
     #Theta from origins - MLE
-    analyze = analyzeTrajectory(filtered_seqset, '')
+    analyze = analyzeTrajectory(filtered_seqset, mut_proportion, '')
     thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
     weeks = np.arange(0,len(thetas))
     print("      Done.\n")
