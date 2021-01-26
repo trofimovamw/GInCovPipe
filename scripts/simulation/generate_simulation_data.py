@@ -58,16 +58,16 @@ parser.add_argument('--switch_orig', action='store_true', required=False,
                          'If true: switch to secon replication rate at the same time point as the original outbreak. '
                          'If false: switch is at the half of the respective time frame.')
 
-parser.add_argument('-init_seq', nargs='+',
+parser.add_argument('-init_seq', nargs='*',
                     help='(optional) Initial sequence. If not given, a random sequence is created.')
 
-parser.add_argument('-sub_rel', type=float, nargs='+', required=False,
+parser.add_argument('-sub_rel', type=float, nargs='*', required=False,
                     help='(optional) list of relative subsampling of the complete sequence set')
 
-parser.add_argument('-sub_abs', type=int, nargs='+', required=False,
+parser.add_argument('-sub_abs', type=int, nargs='*', required=False,
                     help='(optional) list of absolute amount of subsampled sequences per day')
 
-parser.add_argument('-intros', type=int, nargs='+', required=False,
+parser.add_argument('-intros', type=int, nargs='*', required=False,
                     help='(optional) list of number of introductions')
 
 
