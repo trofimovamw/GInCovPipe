@@ -152,7 +152,7 @@ for folder in binnings:
             dates = table['date'].tolist()
             dates_dt = np.array(dates, dtype='datetime64[s]')
             delta_days = (max(dates_dt)-min(dates_dt))/np.timedelta64(1,'D')
-            num_days_per_bin.append(delta_days)
+            num_days_per_bin.append(delta_days+1)
             mean = (np.array(dates, dtype='datetime64[s]').view('i8').mean().astype('datetime64[s]'))
             #print(mean)
             lists_of_dates.append(dates)
@@ -243,7 +243,7 @@ for folder in binnings:
     for i, date in enumerate(mean_header_bin):
         if not (folder.startswith("fuzzy")):
             if not i+1 == len(mean_header_bin):
-                bin_merging_data.append((mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]))
+                bin_merging_data.append((mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i],folder))
 
 
 # Make merged dataset sorted by date
@@ -261,6 +261,7 @@ timesm = []
 cases_on_mean_datem = []
 cases_on_all_dates_in_seqbinm = []
 num_days_per_binm = []
+folders = []
 
 
 for i, mbin in enumerate(bin_merging_data_):
@@ -273,6 +274,7 @@ for i, mbin in enumerate(bin_merging_data_):
     cases_on_mean_datem.append(mbin[6])
     cases_on_all_dates_in_seqbinm.append(mbin[7])
     num_days_per_binm.append(mbin[8])
+    folders.append(mbin[-1])
 
 
 print("\n      Making the final results table...")
@@ -283,11 +285,11 @@ table_path = str(out_dir) + '/' + name_table
 with open(table_path, 'w+', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter='\t',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(["t","value","value_nonorm","variance","trueN","meanBinDate","sampleSize"])
+    writer.writerow(["t","value","value_nonorm","variance","trueN","meanBinDate","sampleSize","binningMode"])
     for i in range(len(times)):
         # If bin size==1/variance is bigger or equal to min_bin_size
         #if maxsize, minsize satisfied 
         if variance_sizem[i]<=1/int(min_bin_size) and num_days_per_binm[i]>=min_days_span and num_days_per_binm[i]<=max_days_span:
-            writer.writerow([times[i],thetasm[i],thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i]])
+            writer.writerow([times[i],thetasm[i],thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i],folders[i]])
         
 print("Done.\n")
