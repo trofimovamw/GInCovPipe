@@ -191,6 +191,36 @@ computeSplineNewCasesTable <- function(input.table) {
 }
 
 
+computeInterpolation <- function (input.table, ts) {
+  N_sampling <- 500
+  p_sample <- 0.5
+  width <- 10
+
+  
+  samplings <- matrix(ncol=length(ts), nrow=0)
+  
+  maxV =0
+  for(i in seq(N_sampling)) {
+    # sample for each row if it is in the sampling set
+    sub_input.table <- input.table[runif(nrow(input.table))<p_sample, ]
+    maxV = max(maxV, sub_input.table$value, na.rm = T)
+    
+    #### first interpolate, collect and smooth median afterwards
+    interpol <- approx(sub_input.table$t, sub_input.table$value, xout=ts)
+    samplings <-rbind(samplings, interpol$y)
+    #samplings.df <- rbind(samplings.df, data.frame(t=interpol$x, value=interpol$y, simu=i))
+  }
+  
+  # taking the quantiles of all samplings
+  quantiles <- apply(samplings, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
+  # ... and smooth them
+  smoothed_quantiles <- t(apply(quantiles, 1, filter, filter=rep(1,width)/width, sides=2))
+  
+  return(smoothed_quantiles)
+}
+
+
+
 # computeSplineNewCasesTable <- function(input.table) {
 #   repCases_gam_cs <- gam(round(new_cases) ~ s(t,bs="cs"),
 #                       data=input.table, method="REML")
