@@ -22,9 +22,10 @@ from scipy import optimize
 
 class analyzeTrajectory:
 
-    def __init__(self, dict_traj, initSeq):
+    def __init__(self, dict_traj, mut_proportion, initSeq):
         self.dict_traj = dict_traj
         self.initSeq = initSeq
+        self.mut_proportion = mut_proportion
 
    
     def _makeOriginsFirstOcc(self, mutSeq, mutantsCount):
@@ -96,6 +97,16 @@ class analyzeTrajectory:
         dd = math.log(b)
         e = x*math.log(1+ns/x)
         return -(d-dd-e)
+
+    def _fmle_short(self,x,nu,ns):
+        '''
+        Function of the estimate for root finding
+        :param nu: number of origins
+        :param ns: number of mutant sequences
+        :param x: param to optimise
+        :return: float
+        '''
+        return (nu-(x*np.log(1+ns/x)))**2
     
     def _optimize(self, nu, ns):
         """
@@ -112,7 +123,9 @@ class analyzeTrajectory:
         # Else optimize with trust-constr option to keep evaluation in feasible region
         else:
             x0 = 1
-            sol = optimize.minimize(self._fmle, x0=x0, method='trust-constr', args=(nu,ns), constraints=con1)
+            #sol = optimize.minimize(self._fmle, x0=x0, method='trust-constr', args=(nu,ns), constraints=con1)
+            # use least squares without MLE
+            sol = optimize.minimize(self._fmle_short, x0=x0, method='trust-constr', args=(nu,ns), constraints=con1)
             return sol.x[0]
 
     def analyzeBinsMLE(self):
@@ -186,6 +199,8 @@ class analyzeTrajectory:
 
         for i in range(len(origins)):
             # Get the MLE
+            #sol = self._optimize(origins[i], math.floor(self.mut_proportion*num_seqs[i]))
+            # Get direct fit original
             sol = self._optimize(origins[i], num_mut[i])
             thetas.append(sol)
 
