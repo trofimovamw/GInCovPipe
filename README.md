@@ -113,7 +113,7 @@ min_bin_size: 15
 max_days_span: 21
 ```
 
-If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (5%, 7%, 10%, 20%) is used.
+If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (2%, 5%, 7%) is used.
 
 ### 3. Run
 
