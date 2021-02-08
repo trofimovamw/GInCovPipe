@@ -191,19 +191,21 @@ computeSplineNewCasesTable <- function(input.table) {
 }
 
 
-computeInterpolation <- function (input.table, ts) {
+computeInterpolation <- function (input.table, ts, weights=NULL) {
   N_sampling <- 500
   p_sample <- 0.5
-  width <- 10
+  #smoothing window of one week
+  width <- 7
 
+  if(is.null(weights))
+    weights=rep(1, nrow(input.table))
   
   samplings <- matrix(ncol=length(ts), nrow=0)
   
-  maxV =0
   for(i in seq(N_sampling)) {
     # sample for each row if it is in the sampling set
-    sub_input.table <- input.table[runif(nrow(input.table))<p_sample, ]
-    maxV = max(maxV, sub_input.table$value, na.rm = T)
+    #sub_input.table <- input.table[runif(nrow(input.table))<p_sample, ]
+    sub_value.table <- input.table[sample(seq(nrow(input.table)), round(nrow(input.table)*p_sample), replace = F, prob=weights),]
     
     #### first interpolate, collect and smooth median afterwards
     interpol <- approx(sub_input.table$t, sub_input.table$value, xout=ts)
@@ -217,6 +219,38 @@ computeInterpolation <- function (input.table, ts) {
   smoothed_quantiles <- t(apply(quantiles, 1, filter, filter=rep(1,width)/width, sides=2))
   
   return(smoothed_quantiles)
+}
+
+computeSmoothedInterpolation <- function (input.table, ts, weights=NULL) {
+  N_sampling <- 500
+  p_sample <- 0.5
+  # average number of samples per day times 7 for a weekly average
+  width <- nrow(input.table)/length(ts)*7
+  
+  if(is.null(weights))
+    weights=rep(1, nrow(input.table))
+  
+  samplings_smoothed <- matrix(ncol=length(ts), nrow=0)
+  
+  for(i in seq(N_sampling)) {
+    # sample for each row if it is in the sampling set
+    #sub_input.table <- input.table[runif(nrow(input.table))<p_sample, ]
+    sub_value.table <- input.table[sample(seq(nrow(input.table)), round(nrow(input.table)*p_sample), replace = F, prob=weights),]
+    
+    #### smooth interpolation and take median afterwards
+    # convolutional filter with windowsize width
+    smoothedVal = as.vector(filter(sub_theta.table$value, rep(1,width)/width, sides=2))
+    smothedTime = as.vector(filter(sub_theta.table$t, rep(1,width)/width, sides=2))
+    
+    #inearly interpolate given data points
+    interpol_smoothed<-approx(smothedTime, smoothedVal, xout=ts)
+    samplings_smoothed <- rbind(samplings_smoothed, interpol_smoothed$y)
+  }
+  
+  # taking the quantiles of all smoothed samplings
+  quantiles_smoothed <- apply(samplings_smoothed, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
+  
+  return(quantiles_smoothed)
 }
 
 
