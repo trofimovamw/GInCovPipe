@@ -159,20 +159,19 @@ interp.table <- interp.table[interp.table$smoothMedian != 0,]
 # R0 package
 # Wallinga and Teunis (2004)
 # Generation intervals distribution - lognormal with mean = 5, sd = 1
-GT <- generation.time(type = "lognormal",
-                      val = c(5,1), truncate = NULL, step = 1, first.half = TRUE,
+GT <- generation.time(type = "weibull",
+                      val = c(5,2), truncate = NULL, step = 1, first.half = TRUE,
                       p0 = TRUE)
-GT_obj <- R0::generation.time("empirical", val=GT$GT)
-td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table$t, minDate))
+td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT,t=days.as.Date(interp.table$t, minDate))
 td.table <- data.frame(t=interp.table[1:length(td$R),]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
 outputFileWT <- paste0(normalizePath(outputDir),"/","wt04_",fileName)
 plotR0Package(td.table,"WT04",outputFileWT)
 
 # Bayesian
-te <- est.R0.SB(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table$t, minDate))
-te.table <- data.frame(t=interp.table[1:length(te$R),]$t,value=as.vector(te$R),lower=as.vector(te$conf.int$CI.lower),upper=as.vector(te$conf.int$CI.upper))
-outputFileE <- paste0(normalizePath(outputDir),"/","bayes_",fileName)
-plotR0Package(te.table,"Bayes.",outputFileE)
+#te <- est.R0.SB(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table$t, minDate))
+#te.table <- data.frame(t=interp.table[1:length(te$R),]$t,value=as.vector(te$R),lower=as.vector(te$conf.int$CI.lower),upper=as.vector(te$conf.int$CI.upper))
+#outputFileE <- paste0(normalizePath(outputDir),"/","bayes_",fileName)
+#plotR0Package(te.table,"Bayes.",outputFileE)
 
 # Compute q(t) = y(t)/y(t-1)
 qtm <- c()
@@ -199,8 +198,8 @@ outputFileInterDots<-paste0(normalizePath(outputDir),"/","rep_cases_interp_wdots
 plotInterpolationWithNewCases(cases.table, interp.table, input.table, meta.table, minDate, outputFileInter, outputFileInterDots)
 
 # Qt plot
-outputFileQt <- paste0(normalizePath(outputDir),"/","qt_interp_",fileName)
-plotQT(interp.table,minDate,outputFileQt)
+#outputFileQt <- paste0(normalizePath(outputDir),"/","qt_interp_",fileName)
+#plotQT(interp.table,minDate,outputFileQt)
 # Plot spline with daily new cases data - no negative values
 # With global minDate
 outputFileRC<-paste0(normalizePath(outputDir),"/","rep_cases_",fileName)
@@ -210,18 +209,20 @@ plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, min
 interp.table2 <-  computeSmoothedInterpolation(input.table, seq(min(input.table$t), max(input.table$t)), input.table$sampleSize)
 interp.table2["date"] = days.as.Date(interp.table2$t, minDate)
 interp.table2[is.na(interp.table2)] = 0
+interp.table2 <- interp.table2[interp.table2$smoothMedian != 0,]
+
 
 # Generation intervals distribution
-td2 <- est.R0.TD(as.numeric(unlist(round(interp.table2$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table2$t, minDate))
+td2 <- est.R0.TD(as.numeric(unlist(round(interp.table2$smoothMedian))),GT=GT,t=days.as.Date(interp.table2$t, minDate))
 td2.table <- data.frame(t=interp.table2[1:length(td2$R),]$t,value=as.vector(td2$R),lower=as.vector(td2$conf.int$lower),upper=as.vector(td2$conf.int$upper))
 outputFileWT <- paste0(normalizePath(outputDir),"/","wt04_smooth_",fileName)
 plotR0Package(td2.table,"WT04",outputFileWT)
 
 # Bayesian
-te2 <- est.R0.SB(as.numeric(unlist(round(interp.table2$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table2$t, minDate))
-te2.table <- data.frame(t=interp.table2[1:length(te2$R),]$t,value=as.vector(te2$R),lower=as.vector(te2$conf.int$CI.lower),upper=as.vector(te2$conf.int$CI.upper))
-outputFileE <- paste0(normalizePath(outputDir),"/","bayes_smooth_",fileName)
-plotR0Package(te2.table,"Bayes.",outputFileE)
+#te2 <- est.R0.SB(as.numeric(unlist(round(interp.table2$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table2$t, minDate))
+#te2.table <- data.frame(t=interp.table2[1:length(te2$R),]$t,value=as.vector(te2$R),lower=as.vector(te2$conf.int$CI.lower),upper=as.vector(te2$conf.int$CI.upper))
+#outputFileE <- paste0(normalizePath(outputDir),"/","bayes_smooth_",fileName)
+#plotR0Package(te2.table,"Bayes.",outputFileE)
 
 
 # Compute q(t) = y(t)/y(t-1)
@@ -296,16 +297,15 @@ plotInterpolationDerivative(interp.table2,minDate,outputFileDeriv2)
 
 
 ########################## Estimate R0 real cases ######################
-# Generation intervals distribution
-tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_avrg))),GT=GT_obj,t=days.as.Date(cases.table$t, minDate))
+tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_avrg))),GT=GT,t=days.as.Date(cases.table$t, minDate))
 tdc.table <- data.frame(t=cases.table[1:length(tdc$R),]$t,value=as.vector(tdc$R),lower=as.vector(tdc$conf.int$lower),upper=as.vector(tdc$conf.int$upper))
 outputFileWT <- paste0(normalizePath(outputDir),"/","cases_wt04_smooth_",fileName)
 plotR0Package(tdc.table,"WT04",outputFileWT)
 # Bayesian
-tec <- est.R0.SB(as.numeric(unlist(round(cases.table$new_cases_avrg))),GT=GT_obj,t=days.as.Date(cases.table$t, minDate))
-tec.table <- data.frame(t=cases.table[1:length(tec$R),]$t,value=as.vector(tec$R),lower=as.vector(tec$conf.int$CI.lower),upper=as.vector(tec$conf.int$CI.upper))
-outputFileE <- paste0(normalizePath(outputDir),"/","cases_bayes_smooth_",fileName)
-plotR0Package(te.table,"Bayes.",outputFileE)
+#tec <- est.R0.SB(as.numeric(unlist(round(cases.table$new_cases))),GT=GT_obj,t=days.as.Date(cases.table$t, minDate))
+#tec.table <- data.frame(t=cases.table[1:length(tec$R),]$t,value=as.vector(tec$R),lower=as.vector(tec$conf.int$CI.lower),upper=as.vector(tec$conf.int$CI.upper))
+#outputFileE <- paste0(normalizePath(outputDir),"/","cases_bayes_smooth_",fileName)
+#plotR0Package(te.table,"Bayes.",outputFileE)
 
 # Identity DFs - method I
 inp = merge(td.table, tdc.table, by.x="t", by.y="t", sort = TRUE)
