@@ -137,11 +137,8 @@ if (!"new_cases" %in% colnames(cases.table)) {
 
 cases.table$new_cases[cases.table$new_cases<0] <- 0
 cases.table$new_cases[is.na(cases.table$new_cases)] <- 0
-print(cases.table$new_cases)
 cases.table$new_cases_avrg <- filter(cases.table$new_cases, rep(1/7,7))
-print(cases.table$new_cases_avrg)
 cases.table <- na.omit(cases.table)
-print(cases.table$new_cases_avrg)
 
 
 cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
@@ -163,8 +160,8 @@ interp.table <- interp.table[interp.table$smoothMedian != 0,]
 # Wallinga and Teunis (2004)
 # Generation intervals distribution - lognormal with mean = 5, sd = 1
 GT <- generation.time(type = "lognormal",
-        val = c(5,1), truncate = NULL, step = 1, first.half = TRUE,
-        p0 = TRUE)
+                      val = c(5,1), truncate = NULL, step = 1, first.half = TRUE,
+                      p0 = TRUE)
 GT_obj <- R0::generation.time("empirical", val=GT$GT)
 td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table$t, minDate))
 td.table <- data.frame(t=interp.table[1:length(td$R),]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
@@ -174,7 +171,6 @@ plotR0Package(td.table,"WT04",outputFileWT)
 # Bayesian
 te <- est.R0.SB(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table$t, minDate))
 te.table <- data.frame(t=interp.table[1:length(te$R),]$t,value=as.vector(te$R),lower=as.vector(te$conf.int$CI.lower),upper=as.vector(te$conf.int$CI.upper))
-print(te.table)
 outputFileE <- paste0(normalizePath(outputDir),"/","bayes_",fileName)
 plotR0Package(te.table,"Bayes.",outputFileE)
 
@@ -224,7 +220,6 @@ plotR0Package(td2.table,"WT04",outputFileWT)
 # Bayesian
 te2 <- est.R0.SB(as.numeric(unlist(round(interp.table2$smoothMedian))),GT=GT_obj,t=days.as.Date(interp.table2$t, minDate))
 te2.table <- data.frame(t=interp.table2[1:length(te2$R),]$t,value=as.vector(te2$R),lower=as.vector(te2$conf.int$CI.lower),upper=as.vector(te2$conf.int$CI.upper))
-print(te2.table)
 outputFileE <- paste0(normalizePath(outputDir),"/","bayes_smooth_",fileName)
 plotR0Package(te2.table,"Bayes.",outputFileE)
 
@@ -306,16 +301,25 @@ tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_avrg))),GT=GT_obj
 tdc.table <- data.frame(t=cases.table[1:length(tdc$R),]$t,value=as.vector(tdc$R),lower=as.vector(tdc$conf.int$lower),upper=as.vector(tdc$conf.int$upper))
 outputFileWT <- paste0(normalizePath(outputDir),"/","cases_wt04_smooth_",fileName)
 plotR0Package(tdc.table,"WT04",outputFileWT)
-print("h")
 # Bayesian
 tec <- est.R0.SB(as.numeric(unlist(round(cases.table$new_cases_avrg))),GT=GT_obj,t=days.as.Date(cases.table$t, minDate))
 tec.table <- data.frame(t=cases.table[1:length(tec$R),]$t,value=as.vector(tec$R),lower=as.vector(tec$conf.int$CI.lower),upper=as.vector(tec$conf.int$CI.upper))
-print(tec.table)
 outputFileE <- paste0(normalizePath(outputDir),"/","cases_bayes_smooth_",fileName)
 plotR0Package(te.table,"Bayes.",outputFileE)
 
-# Identity DFs
+# Identity DFs - method I
 inp = merge(td.table, tdc.table, by.x="t", by.y="t", sort = TRUE)
-print(inp)
 outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_",fileName)
 plotRzeroIdentity(inp,outputFile)
+
+# Identity DFs - method II
+inp2 = merge(td2.table, tdc.table, by.x="t", by.y="t", sort = TRUE)
+outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_smooth_",fileName)
+plotRzeroIdentity(inp2,outputFile)
+
+# Plot both curves on one image
+outputFileD <- paste0(normalizePath(outputDir),"/","cases_wt04_double_",fileName)
+plotRzeroDouble(inp,minDate,outputFileD)
+
+outputFileD2 <- paste0(normalizePath(outputDir),"/","cases_wt04_double_smooth",fileName)
+plotRzeroDouble(inp2,minDate,outputFileD2)

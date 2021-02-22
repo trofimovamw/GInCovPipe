@@ -24,8 +24,6 @@ plotSplineDerivative<- function(spline.table, outputpath) {
 }
 
 plotR0Package <- function(rzero.table,method,outputFile){
-  print("h")
-  print(rzero.table)
   p_interp_d1 <- ggplot() +
     geom_line(aes(x=days.as.Date(rzero.table$t, minDate), y=rzero.table$value), colour="darkred", size=2, alpha=0.7)+
     geom_line(aes(x=days.as.Date(rzero.table$t, minDate), y=rzero.table$lower), size=0.5, alpha=0.7, linetype="dashed")+
@@ -126,10 +124,12 @@ plotInterpolationDerivative <- function(derivs.table,minDate,outputFile) {
 plotRzeroIdentity <- function(merged.table,outputFile) {
   p_ident <- ggplot(merged.table,aes(x=value.x,y=value.y))+
     geom_point() +
-    geom_errorbar(aes(ymin = lower.y,ymax = upper.y),fatten = 0.5,linetype="dashed") +
-    geom_errorbarh(aes(xmin = lower.x,xmax = upper.x),fatten = 0.5,linetype="dashed") +
-    xlab("Estimate") +
-    ylab("Cases") +
+    geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
+    geom_vline(xintercept=1,linetype="dashed",colour="darkgray") +
+    #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
+    #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
+    xlab(expression(paste("Estimate ",log[2](R[0])))) +
+    ylab(expression(paste("Cases ",log[2](R[0])))) +
     theme(axis.text = element_text(size=14),
           axis.title = element_text(size=14,face="bold"),
           legend.text = element_text(size=12),
@@ -143,6 +143,36 @@ plotRzeroIdentity <- function(merged.table,outputFile) {
              device = "pdf",
              file = outputFile)
 }
+
+plotRzeroDouble <- function(merged.table,minDate,outputFile) {
+  colors <- c("Estimate" = "blue", "New reported cases" = "darkred")
+  p_ident <- ggplot()+
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$value.x),colour=colors["Estimate"]) +
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$value.y),colour=colors["New reported cases"]) +
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$upper.x),colour=colors["Estimate"],size = 0.5,linetype="dashed") +
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$lower.x),colour=colors["Estimate"],size = 0.5,linetype="dashed") +
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$upper.y),colour=colors["New reported cases"],size = 0.5,linetype="dashed") +
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$lower.y),colour=colors["New reported cases"],size = 0.5,linetype="dashed") +
+    #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
+    #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
+    xlab("") +
+    scale_x_date(date_breaks = "2 months" , date_labels = "%b %Y") +
+    scale_color_manual(values = colors) +
+    ylab(expression(paste(R[0]))) +
+    theme(axis.text = element_text(size=14),
+          axis.title = element_text(size=14,face="bold"),
+          legend.text = element_text(size=12),
+          legend.title = element_text(size=12, face="bold"),
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          panel.background = element_blank(), axis.line = element_line(colour = "black"))
+    ggsave(p_ident,
+             height = 6,
+             width = 10,
+             dpi = 220,
+             device = "pdf",
+             file = outputFile)
+}
+
 
 plotRatio <- function(ratios, outputFile) {
   data <- data.frame(t=seq(from = 0, to = length(ratios)-1,by=1),x=ratios)
