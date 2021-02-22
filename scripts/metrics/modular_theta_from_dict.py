@@ -22,11 +22,11 @@ from scipy import optimize
 
 class analyzeTrajectory:
 
-    def __init__(self, dict_traj, mut_proportion, initSeq):
+    def __init__(self, dict_traj, mut_proportion, num_days_per_bin, initSeq):
         self.dict_traj = dict_traj
         self.initSeq = initSeq
         self.mut_proportion = mut_proportion
-
+        self.delta_t = num_days_per_bin
    
     def _makeOriginsFirstOcc(self, mutSeq, mutantsCount):
         '''
@@ -201,7 +201,7 @@ class analyzeTrajectory:
             # Get the MLE
             #sol = self._optimize(origins[i], math.floor(self.mut_proportion*num_seqs[i]))
             # Get direct fit original
-            sol = self._optimize(origins[i], num_mut[i])
+            sol = self._optimize(origins[i]/(1+np.log(math.sqrt(self.delta_t[i]))), num_mut[i]/(1+np.log(math.sqrt(self.delta_t[i]))))
             thetas.append(sol)
 
         for i in range(len(thetas)):
