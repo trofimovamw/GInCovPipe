@@ -121,23 +121,94 @@ plotInterpolationDerivative <- function(derivs.table,minDate,outputFile) {
 }
 
 
-plotRzeroIdentity <- function(merged.table,outputFile) {
-  p_ident <- ggplot(merged.table,aes(x=value.x,y=value.y))+
-    geom_point() +
-    geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
-    geom_vline(xintercept=1,linetype="dashed",colour="darkgray") +
+plotRzeroIdentityLog <- function(merged.table,outputFile) {
+  # x<0, y>0
+  left_up <- 0
+  # x<0, y<0
+  left_down <- 0
+  # x>0, y>0
+  right_up <- 0
+  # x>0, y<0
+  right_down <- 0
+  for (i in 1:nrow(merged.table)) {
+    if (log2(merged.table$value.x[i])<=0 & log2(merged.table$value.y[i])>0) {left_up = left_up+1}
+    else if (log2(merged.table$value.x[i])<=0 & log2(merged.table$value.y[i])<=0) {left_down = left_down+1}
+    else if (log2(merged.table$value.x[i])>0 & log2(merged.table$value.y[i])>0) {right_up = right_up+1}
+    else if (log2(merged.table$value.x[i])>0 & log2(merged.table$value.y[i])<=0) {right_down = right_down+1}
+  }
+  left_up <-  round(100*(left_up/(left_up+left_down+right_up+right_down)),digits=2)
+  left_down <-  round(100*(left_down/(left_up+left_down+right_up+right_down)),digits=2)
+  right_up <-  round(100*(right_up/(left_up+left_down+right_up+right_down)),digits=2)
+  right_down <-  round(100*(right_down/(left_up+left_down+right_up+right_down)),digits=2)
+  p_ident <- ggplot(merged.table,aes(x=log2(value.x),y=log2(value.y)))+
+    geom_point(size=2) +
+    geom_hline(yintercept=0,linetype="dashed",colour="darkgray") +
+    geom_vline(xintercept=0,linetype="dashed",colour="darkgray") +
+    geom_label(label=paste(toString(left_up),"%"),x=-1,y=1,size=10)+
+    geom_label(label=paste(toString(left_down),"%"),x=-1,y=-1,size=10)+
+    geom_label(label=paste(toString(right_up),"%"),x=1,y=1,size=10)+
+    geom_label(label=paste(toString(right_down),"%"),x=1,y=-1,size=10)+
+    xlim(-2,2) +
+    ylim(-2,2) +
     #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
     #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
     xlab(expression(paste("Estimate ",log[2](R[0])))) +
     ylab(expression(paste("Cases ",log[2](R[0])))) +
-    theme(axis.text = element_text(size=14),
-          axis.title = element_text(size=14,face="bold"),
-          legend.text = element_text(size=12),
-          legend.title = element_text(size=12, face="bold"),
+    theme(axis.text = element_text(size=24),
+          axis.title = element_text(size=24,face="bold"),
+          legend.text = element_text(size=24),
+          legend.title = element_text(size=24, face="bold"),
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black"))
     ggsave(p_ident,
-             height = 6,
+             height = 10,
+             width = 10,
+             dpi = 220,
+             device = "pdf",
+             file = outputFile)
+}
+
+plotRzeroIdentity <- function(merged.table,outputFile) {
+  # x<0, y>0
+  left_up <- 0
+  # x<0, y<0
+  left_down <- 0
+  # x>0, y>0
+  right_up <- 0
+  # x>0, y<0
+  right_down <- 0
+  for (i in 1:nrow(merged.table)) {
+    if (merged.table$value.x[i]<=1 & merged.table$value.y[i]>1) {left_up = left_up+1}
+    else if (merged.table$value.x[i]<=1 & merged.table$value.y[i]<=1) {left_down = left_down+1}
+    else if (merged.table$value.x[i]>1 & merged.table$value.y[i]>1) {right_up = right_up+1}
+    else if (merged.table$value.x[i]>1 & merged.table$value.y[i]<=1) {right_down = right_down+1}
+  }
+  left_up <-  round(100*(left_up/(left_up+left_down+right_up+right_down)),digits=2)
+  left_down <-  round(100*(left_down/(left_up+left_down+right_up+right_down)),digits=2)
+  right_up <-  round(100*(right_up/(left_up+left_down+right_up+right_down)),digits=2)
+  right_down <-  round(100*(right_down/(left_up+left_down+right_up+right_down)),digits=2)
+  p_ident <- ggplot(merged.table,aes(x=value.x,y=value.y))+
+    geom_point(size=2) +
+    geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
+    geom_vline(xintercept=1,linetype="dashed",colour="darkgray") +
+    geom_label(label=paste(toString(left_up),"%"),x=0.5,y=1.5,size=10)+
+    geom_label(label=paste(toString(left_down),"%"),x=0.5,y=0.5,size=10)+
+    geom_label(label=paste(toString(right_up),"%"),x=1.5,y=1.5,size=10)+
+    geom_label(label=paste(toString(right_down),"%"),x=1.5,y=0.5,size=10)+
+    xlim(0,2) +
+    ylim(0,2) +
+    #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
+    #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
+    xlab(expression(paste("Estimate ",R[0]))) +
+    ylab(expression(paste("Cases ",R[0]))) +
+    theme(axis.text = element_text(size=24),
+          axis.title = element_text(size=24,face="bold"),
+          legend.text = element_text(size=24),
+          legend.title = element_text(size=24, face="bold"),
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          panel.background = element_blank(), axis.line = element_line(colour = "black"))
+    ggsave(p_ident,
+             height = 10,
              width = 10,
              dpi = 220,
              device = "pdf",

@@ -159,7 +159,7 @@ interp.table <- interp.table[interp.table$smoothMedian != 0,]
 # R0 package
 # Wallinga and Teunis (2004)
 # Generation intervals distribution - lognormal with mean = 5, sd = 1
-GT <- generation.time(type = "weibull",
+GT <- generation.time(type = "gamma",
                       val = c(5,2), truncate = NULL, step = 1, first.half = TRUE,
                       p0 = TRUE)
 td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT,t=days.as.Date(interp.table$t, minDate))
@@ -297,7 +297,10 @@ plotInterpolationDerivative(interp.table2,minDate,outputFileDeriv2)
 
 
 ########################## Estimate R0 real cases ######################
-tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_avrg))),GT=GT,t=days.as.Date(cases.table$t, minDate))
+# Cases witth pseudocount
+cases.table$new_cases_pseudo <- cases.table$new_cases_avrg+1
+
+tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_pseudo))),GT=GT,t=days.as.Date(cases.table$t, minDate))
 tdc.table <- data.frame(t=cases.table[1:length(tdc$R),]$t,value=as.vector(tdc$R),lower=as.vector(tdc$conf.int$lower),upper=as.vector(tdc$conf.int$upper))
 outputFileWT <- paste0(normalizePath(outputDir),"/","cases_wt04_smooth_",fileName)
 plotR0Package(tdc.table,"WT04",outputFileWT)
@@ -309,17 +312,22 @@ plotR0Package(tdc.table,"WT04",outputFileWT)
 
 # Identity DFs - method I
 inp = merge(td.table, tdc.table, by.x="t", by.y="t", sort = TRUE)
+outputFile <- paste0(normalizePath(outputDir),"/","cases_log_wt04_ident_",fileName)
+plotRzeroIdentityLog(inp,outputFile)
 outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_",fileName)
 plotRzeroIdentity(inp,outputFile)
 
 # Identity DFs - method II
 inp2 = merge(td2.table, tdc.table, by.x="t", by.y="t", sort = TRUE)
+outputFile <- paste0(normalizePath(outputDir),"/","cases_log_wt04_ident_smooth_",fileName)
+plotRzeroIdentityLog(inp2,outputFile)
 outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_smooth_",fileName)
 plotRzeroIdentity(inp2,outputFile)
 
 # Plot both curves on one image
 outputFileD <- paste0(normalizePath(outputDir),"/","cases_wt04_double_",fileName)
 plotRzeroDouble(inp,minDate,outputFileD)
+
 
 outputFileD2 <- paste0(normalizePath(outputDir),"/","cases_wt04_double_smooth",fileName)
 plotRzeroDouble(inp2,minDate,outputFileD2)
