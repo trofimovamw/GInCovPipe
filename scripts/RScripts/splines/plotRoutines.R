@@ -140,8 +140,11 @@ plotRzeroIdentityLog <- function(merged.table,outputFile) {
   left_down <-  round(100*(left_down/(left_up+left_down+right_up+right_down)),digits=2)
   right_up <-  round(100*(right_up/(left_up+left_down+right_up+right_down)),digits=2)
   right_down <-  round(100*(right_down/(left_up+left_down+right_up+right_down)),digits=2)
+  p1 <- rep(0.3,20)
+  p2 <- rep(1,nrow(merged.table)-20)
+  merged.table$alpha <- c(p1,p2)
   p_ident <- ggplot(merged.table,aes(x=log2(value.x),y=log2(value.y)))+
-    geom_point(size=2) +
+    geom_point(size=3,alpha=merged.table$alpha) +
     geom_hline(yintercept=0,linetype="dashed",colour="darkgray") +
     geom_vline(xintercept=0,linetype="dashed",colour="darkgray") +
     geom_label(label=paste(toString(left_up),"%"),x=-1,y=1,size=10)+
@@ -187,8 +190,12 @@ plotRzeroIdentity <- function(merged.table,outputFile) {
   left_down <-  round(100*(left_down/(left_up+left_down+right_up+right_down)),digits=2)
   right_up <-  round(100*(right_up/(left_up+left_down+right_up+right_down)),digits=2)
   right_down <-  round(100*(right_down/(left_up+left_down+right_up+right_down)),digits=2)
+  # Make alpha smaller for first N dots - burn-in
+  p1 <- rep(0.3,20)
+  p2 <- rep(1,nrow(merged.table)-20)
+  merged.table$alpha <- c(p1,p2)
   p_ident <- ggplot(merged.table,aes(x=value.x,y=value.y))+
-    geom_point(size=2) +
+    geom_point(size=3, alpha=merged.table$alpha) +
     geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
     geom_vline(xintercept=1,linetype="dashed",colour="darkgray") +
     geom_label(label=paste(toString(left_up),"%"),x=0.5,y=1.5,size=10)+
