@@ -144,23 +144,23 @@ plotRzeroIdentityLog <- function(merged.table,outputFile) {
   p2 <- rep(1,nrow(merged.table)-20)
   merged.table$alpha <- c(p1,p2)
   p_ident <- ggplot(merged.table,aes(x=log2(value.x),y=log2(value.y)))+
-    geom_point(size=3,alpha=merged.table$alpha) +
+    geom_point(size=4,alpha=merged.table$alpha) +
     geom_hline(yintercept=0,linetype="dashed",colour="darkgray") +
     geom_vline(xintercept=0,linetype="dashed",colour="darkgray") +
-    geom_label(label=paste(toString(left_up),"%"),x=-1,y=1,size=10)+
-    geom_label(label=paste(toString(left_down),"%"),x=-1,y=-1,size=10)+
-    geom_label(label=paste(toString(right_up),"%"),x=1,y=1,size=10)+
-    geom_label(label=paste(toString(right_down),"%"),x=1,y=-1,size=10)+
+    geom_label(label=paste(toString(left_up),"%"),x=-1,y=1,size=10,label.size = 0)+
+    geom_label(label=paste(toString(left_down),"%"),x=-1,y=-1,size=10,label.size = 0)+
+    geom_label(label=paste(toString(right_up),"%"),x=1,y=1,size=10,label.size = 0)+
+    geom_label(label=paste(toString(right_down),"%"),x=1,y=-1,size=10,label.size = 0)+
     xlim(-2,2) +
     ylim(-2,2) +
     #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
     #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
     xlab(expression(paste("Estimate ",log[2](R[0])))) +
     ylab(expression(paste("Cases ",log[2](R[0])))) +
-    theme(axis.text = element_text(size=24),
-          axis.title = element_text(size=24,face="bold"),
-          legend.text = element_text(size=24),
-          legend.title = element_text(size=24, face="bold"),
+    theme(axis.text = element_text(size=30),
+          axis.title = element_text(size=30,face="bold"),
+          legend.text = element_text(size=30),
+          legend.title = element_text(size=30, face="bold"),
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black"))
     ggsave(p_ident,
@@ -195,23 +195,23 @@ plotRzeroIdentity <- function(merged.table,outputFile) {
   p2 <- rep(1,nrow(merged.table)-20)
   merged.table$alpha <- c(p1,p2)
   p_ident <- ggplot(merged.table,aes(x=value.x,y=value.y))+
-    geom_point(size=3, alpha=merged.table$alpha) +
+    geom_point(size=4, alpha=merged.table$alpha) +
     geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
     geom_vline(xintercept=1,linetype="dashed",colour="darkgray") +
-    geom_label(label=paste(toString(left_up),"%"),x=0.5,y=1.5,size=10)+
-    geom_label(label=paste(toString(left_down),"%"),x=0.5,y=0.5,size=10)+
-    geom_label(label=paste(toString(right_up),"%"),x=1.5,y=1.5,size=10)+
-    geom_label(label=paste(toString(right_down),"%"),x=1.5,y=0.5,size=10)+
+    geom_label(label=paste(toString(left_up),"%"),x=0.5,y=1.5,size=10,label.size = 0)+
+    geom_label(label=paste(toString(left_down),"%"),x=0.5,y=0.5,size=10,label.size = 0)+
+    geom_label(label=paste(toString(right_up),"%"),x=1.5,y=1.5,size=10,label.size = 0)+
+    geom_label(label=paste(toString(right_down),"%"),x=1.5,y=0.5,size=10,label.size = 0)+
     xlim(0,2) +
     ylim(0,2) +
     #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
     #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
     xlab(expression(paste("Estimate ",R[0]))) +
     ylab(expression(paste("Cases ",R[0]))) +
-    theme(axis.text = element_text(size=24),
-          axis.title = element_text(size=24,face="bold"),
-          legend.text = element_text(size=24),
-          legend.title = element_text(size=24, face="bold"),
+    theme(axis.text = element_text(size=30),
+          axis.title = element_text(size=30,face="bold"),
+          legend.text = element_text(size=30),
+          legend.title = element_text(size=30, face="bold"),
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black"))
     ggsave(p_ident,
@@ -337,9 +337,63 @@ plotSplineWithNewCases <-function(data.table, input.table, spline.table, outputF
 }
 
 plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,meta.table,minDate,outputFile,outputFileDots) {
-  minX <- max(min(cases.table$new_cases),0)
+  minX <- 0
   maxX <- max(cases.table$new_cases)
-  minY <- max(min(interp.table$smoothMedian),0)
+  minY <- 0
+  maxY <- max(interp.table$smoothMedian)
+  ylimMax <- max(cases.table$new_cases)
+  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  print(minY)
+  p_spline_esti_realN <- ggplot() +
+    #geom_histogram(data=meta.table, aes(x=days.as.Date(meta.table$t, minDate),y=..density..), fill="black", alpha=0.2, bins=round(nrow(input.table)/7)) +
+    #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
+    geom_line(aes(x=days.as.Date(cases.table$t, minDate), y=rescale(cases.table$new_cases_avrg, minX, maxX, minY, maxY)),size=1.5, color=mycolors["trued"], alpha=0.5)+
+    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smoothMedian), size=1.5, colour=mycolors["esti"], alpha=0.7)+
+    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth5), size=0.5, colour=mycolors["esti"], alpha=0.7, linetype="dashed")+
+    geom_rug(data=meta.table, aes(x = days.as.Date(meta.table$t, minDate)), inherit.aes = F)+
+    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth95), size=0.5, colour=mycolors["esti"], alpha=0.7, linetype="dashed")+
+    scale_size_continuous(range = c(min(input.table$pointSize), max(input.table$pointSize))) +
+    scale_y_continuous(
+      expression(paste(theta[est])),
+      #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
+      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "new reported cases\n")) +
+    xlab("")+
+    #coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
+    scale_x_date(date_breaks = "2 months" , date_labels = "%b %Y") +
+    theme(
+      axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+      axis.title.y = element_text(color = mycolors["estid"]),
+      axis.text.y = element_text(color = mycolors["estid"]),
+      axis.title.y.right = element_text(color = mycolors["trued"]),
+      axis.text.y.right = element_text(color = mycolors["trued"]),
+      axis.text = element_text(size=18),
+      axis.title = element_text(size=18),
+      legend.text = element_text(size=18),
+      legend.title = element_text(size=18, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
+    )
+
+    ggsave(p_spline_esti_realN,
+             height = 5,
+             width = 10,
+             dpi = 220,
+             device = "pdf",
+             file = outputFile)
+    p_spline_esti_realN <-    p_spline_esti_realN +
+         geom_point(aes(x=days.as.Date(input.table$t, minDate), y=input.table$value), colour=mycolors["esti"], size=input.table$pointSize, alpha=0.3)
+    ggsave(p_spline_esti_realN,
+             height = 5,
+             width = 10,
+             dpi = 220,
+             device = "pdf",
+             file = outputFileDots)
+  }
+
+plotInterpolationWithNewCasesHist <- function(cases.table,interp.table,input.table,meta.table,minDate,outputFile,outputFileDots) {
+  minX <- 0
+  maxX <- max(cases.table$new_cases)
+  minY <- 0
   maxY <- max(interp.table$smoothMedian)
   ylimMax <- max(cases.table$new_cases)
   mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
@@ -387,7 +441,7 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
              dpi = 220,
              device = "pdf",
              file = outputFileDots)
-  }
+}
 
 plotSplineWithNewCasesSE <-function(data.table, spline.table, outputFile_trueNSE) {
 
