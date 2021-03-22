@@ -13,13 +13,13 @@ dynamic_require <- function(package){
 }
 
 #"ggformula"
-for(p in c("ggplot2", "mgcv","grid","gridExtra","MASS","R0")) {
+for(p in c("ggplot2", "mgcv","grid","gridExtra","MASS","R0","shadowtext","scales","plyr","lubridate")) {
   dynamic_require(p)
 }
 
 #Read in arguments
 args = commandArgs(trailingOnly = TRUE)
-if(length(args) < 8) {
+if(length(args) < 9) {
   cat("\nCall the script with 4 arguments: estimatesFile reportedCasesFile delim dateColumName newCasesColumnName dateFormat label outputFile\n\n
 1. The estimates file contains a tab separated table with headers and has at least 3 columns: \n
 t value variance.\n\n
@@ -31,10 +31,13 @@ The separator and the column names can be chosen arbitrarily and are defined wit
 6. The format of the date, e.g. %Y-%m-%d. \n\n
 7. A label for the data set, e.g. a country or city.\n\n
 8. The output path. The output tables are written to the given directory,
-      which is created if it does not exist yet.\n")
+      which is created if it does not exist yet.\n
+9. BEAST table for R0 values comparison.\n")
   #terminate without saving workspace
   quit("no")
 }
+
+
 
 cat(c("Arguments: ", args, "\n"), sep = "\n")
 
@@ -50,7 +53,7 @@ table_date_format = args[6]
 country = toString(args[7])
 outputFile<-file.path(args[8])
 
-cases.table = read.table(normalizePath(table_name), header=T, sep=table_delim)
+cases.table.full = read.table(normalizePath(table_name), header=T, sep=table_delim)
 input.table = read.table(inputFile, header=T, sep = "\t")
 # Just for the plots, REMOVE
 meta.table = read.table("/Users/mariatrofimova/Documents/GitHub/nCovPopDyn/results/meta/meta_dates.tsv", header=T, sep = "\t")
@@ -81,24 +84,28 @@ if (rstudioapi::isAvailable()) {
 }
 setwd(this.dir)
 
+remotes::install_github("wilkelab/ggtext")
+library(ggtext)
+
 # load other r routines
 source("splineRoutines.r")
 source("plotRoutines.r")
 source("dateFormatRoutines.r")
 
-
-
 # change column names as they can be chosen flexibly, but we require date and new_cases
-names(cases.table)[names(cases.table) == table_date_col] <- "date"
-names(cases.table)[names(cases.table) == table_active_col] <- "new_cases"
+names(cases.table.full)[names(cases.table.full) == table_date_col] <- "date"
+names(cases.table.full)[names(cases.table.full) == table_active_col] <- "new_cases"
 
 #change date format to yyy-mm-dd
 # minDate to use in all plotted tables
-minDate1 = min(as.Date(cases.table$date, table_date_format))
+minDate1 = min(as.Date(cases.table.full$date, table_date_format))
 minDate2 = min(as.Date(input.table$meanBinDate, table_date_format))
 minDate = min(c(minDate1,minDate2))
-cases.table$date <- as.Date(cases.table$date, table_date_format)
+cases.table.full$date <- as.Date(cases.table.full$date, table_date_format)
 meta.table$Collection_date <- as.Date(meta.table$Collection_date, table_date_format)
+
+# Make cases table with t, new_cases, dates
+cases.table <- data.frame(new_cases=cases.table.full$new_cases,date=cases.table.full$date)
 
 # Compute the splines and dot sizes
 cat("--- Compute spline and interpolation ---\n\n")
@@ -139,7 +146,8 @@ cases.table$new_cases[cases.table$new_cases<0] <- 0
 cases.table$new_cases[is.na(cases.table$new_cases)] <- 0
 cases.table$new_cases_avrg <- filter(cases.table$new_cases, rep(1/7,7))
 cases.table <- na.omit(cases.table)
-
+cases.table$country <- rep(country,nrow(cases.table))
+print(cases.table$new_cases_avrg)
 
 cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
 
@@ -155,6 +163,9 @@ interp.table["date"] = days.as.Date(interp.table$t, minDate)
 interp.table[is.na(interp.table)] = 0
 # Remove rows with zeros in smooth median
 interp.table <- interp.table[interp.table$smoothMedian != 0,]
+# Measures table
+measure.table = read.table("/Users/mariatrofimova/Desktop/restrictions_new.csv", header =T, sep=";", as.is=T, quote = "\"",allowEscapes=TRUE)
+
 
 # R0 package
 # Wallinga and Teunis (2004)
@@ -195,7 +206,7 @@ interp.table$qt95 <- qt95
 write.csv(interp.table,paste0(outputDir,"/interpolation_",country,".csv"), row.names = F, col.names = T)
 outputFileInter<-paste0(normalizePath(outputDir),"/","rep_cases_interp_",fileName)
 outputFileInterDots<-paste0(normalizePath(outputDir),"/","rep_cases_interp_wdots_",fileName)
-plotInterpolationWithNewCases(cases.table, interp.table, input.table, meta.table, minDate, outputFileInter, outputFileInterDots)
+plotInterpolationWithNewCases(cases.table, interp.table, input.table, meta.table, minDate, outputFileInter, outputFileInterDots,measure.table[which(measure.table$country==country),],country)
 
 # Qt plot
 #outputFileQt <- paste0(normalizePath(outputDir),"/","qt_interp_",fileName)
@@ -244,10 +255,10 @@ interp.table2$qt5 <- qt5
 interp.table2$qt95 <- qt95
 
 #Write tables and plot
-outputFileInter<-paste0(normalizePath(outputDir),"/","rep_cases_interp_smoothed_",fileName)
+outputFileInter<-paste0(normalizePath(outputDir),"/rep_cases_interp_smoothed_",fileName)
 outputFileInterDots<-paste0(normalizePath(outputDir),"/","rep_cases_interp_smoothed_wdots_",fileName)
 write.csv(interp.table2,paste0(outputDir,"/interpolation_smooth_",country,".csv"), row.names = F, col.names = T)
-plotInterpolationWithNewCases(cases.table, interp.table2, input.table, meta.table, minDate, outputFileInter, outputFileInterDots)
+plotInterpolationWithNewCases(cases.table, interp.table2, input.table, meta.table, minDate, outputFileInter, outputFileInterDots,measure.table[which(measure.table$country==country),],country)
 
 # Qt plot
 outputFileQt <- paste0(normalizePath(outputDir),"/","qt_interp_smoothed_",fileName)
@@ -283,21 +294,21 @@ write.csv(input.table,paste0(outputDir,"/theta_",country,".csv"), row.names = F)
 # interp.table2$rzero5 <- filter(interp.table2$rzero5, rep(1/width,width))
 # interp.table2$rzero95 <- filter(interp.table2$rzero95, rep(1/width,width))
 
-outputFileR0<-paste0(normalizePath(outputDir),"/","rzero_5days_",fileName)
-plotInterpolationR0(interp.table,minDate,outputFileR0)
-# With Method II
-outputFileR02<-paste0(normalizePath(outputDir),"/","rzero_5days_smooth_",fileName)
-plotInterpolationR0(interp.table2,minDate,outputFileR02)
-
-outputFileDeriv<-paste0(normalizePath(outputDir),"/","deriv_5days_",fileName)
-plotInterpolationDerivative(interp.table,minDate,outputFileDeriv)
-# Witth Method II
-outputFileDeriv2<-paste0(normalizePath(outputDir),"/","deriv_5days_smooth_",fileName)
-plotInterpolationDerivative(interp.table2,minDate,outputFileDeriv2)
+# outputFileR0<-paste0(normalizePath(outputDir),"/","rzero_5days_",fileName)
+# plotInterpolationR0(interp.table,minDate,outputFileR0)
+# # With Method II
+# outputFileR02<-paste0(normalizePath(outputDir),"/","rzero_5days_smooth_",fileName)
+# plotInterpolationR0(interp.table2,minDate,outputFileR02)
+#
+# outputFileDeriv<-paste0(normalizePath(outputDir),"/","deriv_5days_",fileName)
+# plotInterpolationDerivative(interp.table,minDate,outputFileDeriv)
+# # Witth Method II
+# outputFileDeriv2<-paste0(normalizePath(outputDir),"/","deriv_5days_smooth_",fileName)
+# plotInterpolationDerivative(interp.table2,minDate,outputFileDeriv2)
 
 
 ########################## Estimate R0 real cases ######################
-# Cases witth pseudocount
+# Cases with pseudocount
 cases.table$new_cases_pseudo <- cases.table$new_cases_avrg+1
 
 tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_pseudo))),GT=GT,t=days.as.Date(cases.table$t, minDate))
@@ -316,6 +327,8 @@ outputFile <- paste0(normalizePath(outputDir),"/","cases_log_wt04_ident_",fileNa
 plotRzeroIdentityLog(inp,outputFile)
 outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_",fileName)
 plotRzeroIdentity(inp,outputFile)
+outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_masking_",fileName)
+plotRzeroIdentityMasking(inp,outputFile)
 
 # Identity DFs - method II
 inp2 = merge(td2.table, tdc.table, by.x="t", by.y="t", sort = TRUE)
@@ -323,11 +336,50 @@ outputFile <- paste0(normalizePath(outputDir),"/","cases_log_wt04_ident_smooth_"
 plotRzeroIdentityLog(inp2,outputFile)
 outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_smooth_",fileName)
 plotRzeroIdentity(inp2,outputFile)
+outputFile <- paste0(normalizePath(outputDir),"/","cases_wt04_ident_smooth_masking_",fileName)
+plotRzeroIdentityMasking(inp2,outputFile)
+
 
 # Plot both curves on one image
 outputFileD <- paste0(normalizePath(outputDir),"/","cases_wt04_double_",fileName)
-plotRzeroDouble(inp,minDate,outputFileD)
+outputFileDLog <- paste0(normalizePath(outputDir),"/","cases_wt04_double_log_",fileName)
+plotRzeroDouble(inp,minDate,outputFileD,outputFileDLog,measure.table[which(measure.table$country==country),])
 
 
 outputFileD2 <- paste0(normalizePath(outputDir),"/","cases_wt04_double_smooth",fileName)
-plotRzeroDouble(inp2,minDate,outputFileD2)
+outputFileD2Log <- paste0(normalizePath(outputDir),"/","cases_wt04_double_smoooth_log_",fileName)
+plotRzeroDouble(inp2,minDate,outputFileD2,outputFileD2Log,measure.table[which(measure.table$country==country),])
+#BEAST comparison
+# Bin the values - R0s
+values.vec <- c()
+border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-06-15","2020-08-20","2020-10-19","2021-03-30"))
+#border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-07-19","2020-09-13","2020-10-26","2021-03-30"))
+tdc.table$date <- days.as.Date(tdc.table$t, minDate)
+group.means <- c()
+# 16.03-11.05-15.06-20.08-19.10
+for (i in (1:nrow(tdc.table))){
+  for (j in (2:length(border.dates))){
+    if ((tdc.table$date[i]>=border.dates[j-1]) & (tdc.table$date[i]<border.dates[j])){
+      values.vec <- c(values.vec,(j-1))
+      group.means <- c(group.means,(border.dates[j]-border.dates[j-1])/2)
+    }
+  }
+}
+
+tdc.table$group <- values.vec
+#mean.tdc.table <- aggregate(tdc.table$value, list(tdc.table$group), FUN = 'quantile', probs = 0.05)
+tdc.table.95 <- ddply(tdc.table, "group", summarise, WQ95 = quantile(value, .95))
+tdc.table.5 <- ddply(tdc.table, "group", summarise, WQ50 = quantile(value, .5))
+tdc.table.05 <- ddply(tdc.table, "group", summarise, WQ05 = quantile(value, .05))
+
+beast.table <- read.table(args[9], header =T, sep=" ", as.is=T, quote = "\"",allowEscapes=TRUE)
+beast.table.95 <- ddply(beast.table, "interval", summarise, WQ95 = quantile(R, .95))
+beast.table.5 <- ddply(beast.table, "interval", summarise, WQ50 = quantile(R, .5))
+beast.table.05 <- ddply(beast.table, "interval", summarise, WQ05 = quantile(R, .05))
+
+rzero.table <- data.frame(period=tdc.table.5$group,est.median=tdc.table.5$WQ50,
+                          est.lower=tdc.table.05$WQ05, est.upper=tdc.table.95$WQ95,
+                          beast.median=beast.table.5$WQ50, date=border.dates[1:(length(border.dates)-1)],
+                          beast.lower=beast.table.05$WQ05, beast.upper=beast.table.95$WQ95)
+outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_",fileName)
+plotR0BEAST(rzero.table,outputFileR0,country)

@@ -210,7 +210,7 @@ computeInterpolation <- function (input.table, ts, weights=NULL) {
   for(i in seq(N_sampling)) {
     # sample for each row if it is in the sampling set
     #sub_input.table <- input.table[runif(nrow(input.table))<p_sample, ]
-    sub_value.table <- input.table[sample(seq(nrow(input.table)), round(nrow(input.table)*p_sample), replace = F, prob=weights),]
+    sub_value.table <- input.table[sample(seq(nrow(input.table)), round(nrow(input.table)*p_sample), replace = F, prob=NULL),]
     sub_value.table <- sub_value.table[order(sub_value.table$t),]
 
     #### first interpolate, collect and smooth median afterwards
@@ -277,7 +277,7 @@ computeSmoothedInterpolation <- function (input.table, ts, weights=NULL) {
   for(i in seq(N_sampling)) {
     # sample for each row if it is in the sampling set
     #sub_input.table <- input.table[runif(nrow(input.table))<p_sample, ]
-    sub_value.table <- input.table[sample(seq(nrow(input.table)), round(nrow(input.table)*p_sample), replace = F, prob=weights),]
+    sub_value.table <- input.table[sample(seq(nrow(input.table)), round(nrow(input.table)*p_sample), replace = F, prob=NULL),]
     sub_value.table <- sub_value.table[order(sub_value.table$t),]
     #### smooth interpolation and take median afterwards
     # convolutional filter with windowsize width

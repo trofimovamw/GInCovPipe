@@ -15,7 +15,7 @@ report: "report/workflow.rst"
 
 rule all:
 	input:
-		"results/splines/out_spline.pdf"
+		"results/splines/out_spline.png"
 
 
 rule strip_whitespaces:
@@ -163,13 +163,12 @@ rule splines:
 		date_col = config["reported_cases"][2],
 		cases_col = config["reported_cases"][3],
 		date_format = config["reported_cases"][4],
-		group = config["group"]
-	conda:
-		"env/env.yml"
+		group = config["group"],
+		beast = config["beast"]
 	output:
-		result = "results/splines/out_spline.pdf",
+		result = "results/splines/out_spline.png",
 		#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 	shell:
 		"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeSpline.R {input.infile} \
 		{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
-		{params.date_format} {params.group} {output.result}"
+		{params.date_format} {params.group} {output.result} {params.beast}"

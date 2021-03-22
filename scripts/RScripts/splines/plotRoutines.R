@@ -19,7 +19,7 @@ plotSplineDerivative<- function(spline.table, outputpath) {
          height = 8,
          width = 16,
          dpi = 220,
-         device = "pdf",
+
          file = outputFile)
 }
 
@@ -44,7 +44,7 @@ plotR0Package <- function(rzero.table,method,outputFile){
              height = 6,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
              file = outputFile)
 }
 
@@ -68,7 +68,7 @@ plotQT <- function(derivs.table,minDate,outputFile) {
              height = 6,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
              file = outputFile)
 }
 
@@ -93,7 +93,7 @@ plotInterpolationR0 <- function(derivs.table,minDate,outputFile) {
              height = 6,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
              file = outputFile)
 }
 
@@ -116,7 +116,7 @@ plotInterpolationDerivative <- function(derivs.table,minDate,outputFile) {
              height = 6,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
              file = outputFile)
 }
 
@@ -147,27 +147,94 @@ plotRzeroIdentityLog <- function(merged.table,outputFile) {
     geom_point(size=4,alpha=merged.table$alpha) +
     geom_hline(yintercept=0,linetype="dashed",colour="darkgray") +
     geom_vline(xintercept=0,linetype="dashed",colour="darkgray") +
-    geom_label(label=paste(toString(left_up),"%"),x=-1,y=1,size=10,label.size = 0)+
-    geom_label(label=paste(toString(left_down),"%"),x=-1,y=-1,size=10,label.size = 0)+
-    geom_label(label=paste(toString(right_up),"%"),x=1,y=1,size=10,label.size = 0)+
-    geom_label(label=paste(toString(right_down),"%"),x=1,y=-1,size=10,label.size = 0)+
+    geom_label(label=paste(toString(left_up),"%"),x=-1,y=1,size=16,label.size = 0)+
+    geom_label(label=paste(toString(left_down),"%"),x=-1,y=-1,size=16,label.size = 0)+
+    geom_label(label=paste(toString(right_up),"%"),x=1,y=1,size=16,label.size = 0)+
+    geom_label(label=paste(toString(right_down),"%"),x=1,y=-1,size=16,label.size = 0)+
     xlim(-2,2) +
     ylim(-2,2) +
     #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
     #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
     xlab(expression(paste("Estimate ",log[2](R[0])))) +
     ylab(expression(paste("Cases ",log[2](R[0])))) +
-    theme(axis.text = element_text(size=30),
-          axis.title = element_text(size=30,face="bold"),
-          legend.text = element_text(size=30),
-          legend.title = element_text(size=30, face="bold"),
+    theme(axis.text = element_text(size=45),
+          axis.title = element_text(size=45,face="bold"),
+          legend.text = element_text(size=45),
+          legend.title = element_text(size=45, face="bold"),
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black"))
     ggsave(p_ident,
              height = 10,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
+             file = outputFile)
+}
+
+plotRzeroIdentityMasking <- function(merged.table2,outputFile) {
+  merged.table <- data.frame()
+  for (i in (1:nrow(merged.table2))) {
+    if (merged.table2$value.x[i]>=2**(0.5) & merged.table2$value.y[i]>=2**(0.5)) {
+      merged.table <- rbind(merged.table,merged.table2[i,])
+    }
+  else if (merged.table2$value.x[i]>=2**(0.5) & merged.table2$value.y[i]<2**(-0.5)) {
+      merged.table <- rbind(merged.table,merged.table2[i,])
+    }
+  else if (merged.table2$value.x[i]<2**(-0.5) & merged.table2$value.y[i]<2**(-0.5)) {
+      merged.table <- rbind(merged.table,merged.table2[i,])
+    }
+  else if (merged.table2$value.x[i]<2**(-0.5) & merged.table2$value.y[i]>=2**(0.5)) {
+      merged.table <- rbind(merged.table,merged.table2[i,])
+    }
+  }
+  print(merged.table)
+  # x<0, y>0
+  left_up <- 0
+  # x<0, y<0
+  left_down <- 0
+  # x>0, y>0
+  right_up <- 0
+  # x>0, y<0
+  right_down <- 0
+  for (i in 1:nrow(merged.table)) {
+    if (merged.table$value.x[i]<=1 & merged.table$value.y[i]>1) {left_up = left_up+1}
+    else if (merged.table$value.x[i]<=1 & merged.table$value.y[i]<=1) {left_down = left_down+1}
+    else if (merged.table$value.x[i]>1 & merged.table$value.y[i]>1) {right_up = right_up+1}
+    else if (merged.table$value.x[i]>1 & merged.table$value.y[i]<=1) {right_down = right_down+1}
+  }
+  left_up <-  round(100*(left_up/(left_up+left_down+right_up+right_down)),digits=2)
+  left_down <-  round(100*(left_down/(left_up+left_down+right_up+right_down)),digits=2)
+  right_up <-  round(100*(right_up/(left_up+left_down+right_up+right_down)),digits=2)
+  right_down <-  round(100*(right_down/(left_up+left_down+right_up+right_down)),digits=2)
+  # Make alpha smaller for first N dots - burn-in
+  #p1 <- rep(0.3,20)
+  p2 <- rep(1,nrow(merged.table))
+  merged.table$alpha <- p2
+  p_ident <- ggplot(merged.table,aes(x=value.x,y=value.y))+
+    geom_point(size=4, alpha=merged.table$alpha) +
+    geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
+    geom_vline(xintercept=1,linetype="dashed",colour="darkgray") +
+    geom_label(label=paste(toString(left_up),"%"),x=0.5,y=2.5,size=18,label.size = 0)+
+    geom_label(label=paste(toString(left_down),"%"),x=0.5,y=0.5,size=18,label.size = 0)+
+    geom_label(label=paste(toString(right_up),"%"),x=2.5,y=2.5,size=18,label.size = 0)+
+    geom_label(label=paste(toString(right_down),"%"),x=2.5,y=0.5,size=18,label.size = 0)+
+    xlim(0,4) +
+    ylim(0,4) +
+    #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
+    #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
+    xlab(expression(paste("Estimate ",R[0]))) +
+    ylab(expression(paste("Cases ",R[0]))) +
+    theme(axis.text = element_text(size=50),
+          axis.title = element_text(size=50,face="bold"),
+          legend.text = element_text(size=50),
+          legend.title = element_text(size=50, face="bold"),
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          panel.background = element_blank(), axis.line = element_line(colour = "black"))
+    ggsave(p_ident,
+             height = 10,
+             width = 10,
+             dpi = 220,
+
              file = outputFile)
 }
 
@@ -198,57 +265,100 @@ plotRzeroIdentity <- function(merged.table,outputFile) {
     geom_point(size=4, alpha=merged.table$alpha) +
     geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
     geom_vline(xintercept=1,linetype="dashed",colour="darkgray") +
-    geom_label(label=paste(toString(left_up),"%"),x=0.5,y=1.5,size=10,label.size = 0)+
-    geom_label(label=paste(toString(left_down),"%"),x=0.5,y=0.5,size=10,label.size = 0)+
-    geom_label(label=paste(toString(right_up),"%"),x=1.5,y=1.5,size=10,label.size = 0)+
-    geom_label(label=paste(toString(right_down),"%"),x=1.5,y=0.5,size=10,label.size = 0)+
+    geom_label(label=paste(toString(left_up),"%"),x=0.5,y=1.5,size=18,label.size = 0)+
+    geom_label(label=paste(toString(left_down),"%"),x=0.5,y=0.5,size=18,label.size = 0)+
+    geom_label(label=paste(toString(right_up),"%"),x=1.5,y=1.5,size=18,label.size = 0)+
+    geom_label(label=paste(toString(right_down),"%"),x=1.5,y=0.5,size=18,label.size = 0)+
     xlim(0,2) +
     ylim(0,2) +
     #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
     #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
     xlab(expression(paste("Estimate ",R[0]))) +
     ylab(expression(paste("Cases ",R[0]))) +
-    theme(axis.text = element_text(size=30),
-          axis.title = element_text(size=30,face="bold"),
-          legend.text = element_text(size=30),
-          legend.title = element_text(size=30, face="bold"),
+    theme(axis.text = element_text(size=50),
+          axis.title = element_text(size=50,face="bold"),
+          legend.text = element_text(size=50),
+          legend.title = element_text(size=50, face="bold"),
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black"))
     ggsave(p_ident,
              height = 10,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
              file = outputFile)
 }
 
-plotRzeroDouble <- function(merged.table,minDate,outputFile) {
+plotRzeroDouble <- function(merged.table,minDate,outputFile,outputFile2,measure_country.table) {
+  ylimMax = 6
+  dates = sort(days.as.Date(merged.table$t, minDate))
   colors <- c("Estimate" = "blue", "New reported cases" = "darkred")
   p_ident <- ggplot()+
-    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$value.x),colour=colors["Estimate"]) +
-    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$value.y),colour=colors["New reported cases"]) +
-    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$upper.x),colour=colors["Estimate"],size = 0.5,linetype="dashed") +
-    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$lower.x),colour=colors["Estimate"],size = 0.5,linetype="dashed") +
-    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$upper.y),colour=colors["New reported cases"],size = 0.5,linetype="dashed") +
-    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$lower.y),colour=colors["New reported cases"],size = 0.5,linetype="dashed") +
-    #geom_errorbar(aes(ymin = log2(lower.y), ymax = log2(upper.y)),fatten = 0.5,linetype="dashed") +
-    #geom_errorbarh(aes(xmin = log2(lower.x), xmax = log2(upper.x)),fatten = 0.5,linetype="dashed") +
+    geom_ribbon(aes(x=days.as.Date(merged.table$t, minDate),ymin=merged.table$upper.x, ymax=merged.table$lower.x),orientation = "x",fill=colors["Estimate"],alpha=0.1) +
+    geom_ribbon(aes(x=days.as.Date(merged.table$t, minDate),ymin=merged.table$upper.y, ymax=merged.table$lower.y),orientation = "x",fill=colors["New reported cases"],alpha=0.1) +
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$value.x,colour="Estimate")) +
+    geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=merged.table$value.y,colour="New cases")) +
+    geom_hline(yintercept=1,linetype="dashed",colour="darkgray") +
+    ylim(0,6) +
     xlab("") +
-    scale_x_date(date_breaks = "2 months" , date_labels = "%b %Y") +
-    scale_color_manual(values = colors) +
+    scale_x_date(date_breaks = "3 months" , date_labels = "%b %Y") +
+    scale_colour_manual(name="",values = c("blue","darkred"),label=c("Estimate","New cases")) +
     ylab(expression(paste(R[0]))) +
-    theme(axis.text = element_text(size=14),
-          axis.title = element_text(size=14,face="bold"),
-          legend.text = element_text(size=12),
-          legend.title = element_text(size=12, face="bold"),
+    theme(axis.text = element_text(size=24),
+          axis.title = element_text(size=28,face="bold"),
+          legend.text = element_text(size=20),
+          legend.title = element_text(size=20, face="bold"),
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+    if(nrow(measure_country.table) != 0) {
+      ypos = ylimMax
+
+      #ypos = max(layer_scales(p_spline_esti_realN)[["y"]][["range"]][["range"]])
+      p_ident <- p_ident +
+        geom_vline(xintercept = as.Date(measure_country.table$date), linetype="dashed", color = "black") +
+        geom_text(data=measure_country.table,mapping=aes(x=as.Date(date), y=ypos, label=paste0(dateStr, "\n",measure)),
+                  size=5, angle=90, vjust=0.4, hjust="right", fontface = "bold", color = "white") +
+        geom_text(data=measure_country.table,mapping=aes(x=as.Date(date), y=ypos, label=paste0(dateStr, "\n",measure)),
+                  size=5, angle=90, vjust=0.6, hjust="right", fontface = "bold", color = "white") +
+        geom_text(data=measure_country.table,mapping=aes(x=as.Date(date), y=ypos, label=paste0(dateStr, "\n",measure)),
+                  size=5, angle=90, vjust=0.5, hjust=0.8, fontface = "bold", color = "white") +
+        geom_text(data=measure_country.table,mapping=aes(x=as.Date(date), y=ypos, label=paste0(dateStr, "\n",measure)),
+                  size=5, angle=90, vjust=0.5, hjust=1.01, fontface = "bold", color = "white") +
+        geom_text(data=measure_country.table,mapping=aes(x=as.Date(date), y=ypos, label=paste0(dateStr, "\n", measure)),
+                  size=5, angle=90, vjust=0.5, hjust="right", fontface = "bold",)
+
+    }
     ggsave(p_ident,
-             height = 6,
+             height = 5,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
              file = outputFile)
+
+    p_ident <- ggplot()+
+       geom_ribbon(aes(x=days.as.Date(merged.table$t, minDate),ymin=log2(merged.table$upper.x), ymax=log2(merged.table$lower.x)),orientation = "x",fill=colors["Estimate"],alpha=0.1) +
+       geom_ribbon(aes(x=days.as.Date(merged.table$t, minDate),ymin=log2(merged.table$upper.y), ymax=log2(merged.table$lower.y)),orientation = "x",fill=colors["New reported cases"],alpha=0.1) +
+       geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=log2(merged.table$value.x),colour="Estimate")) +
+       geom_line(aes(x=days.as.Date(merged.table$t, minDate),y=log2(merged.table$value.y),colour="New cases")) +
+       geom_hline(yintercept=0,linetype="dashed",colour="darkgray") +
+       #ylim(-4) +
+       xlab("") +
+       scale_x_date(date_breaks = "3 months" , date_labels = "%b %Y") +
+       scale_colour_manual(name="",values = c("blue","darkred"),label=c("Estimate","New cases")) +
+       ylab(expression(paste(log[2](R[0])))) +
+       theme(axis.text = element_text(size=24),
+             axis.title = element_text(size=28,face="bold"),
+             legend.text = element_text(size=20),
+             legend.title = element_text(size=20, face="bold"),
+             panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black"))
+       ggsave(p_ident,
+              height = 5,
+              width = 10,
+              dpi = 220,
+
+              file = outputFile2)
 }
 
 
@@ -262,7 +372,7 @@ plotRatio <- function(ratios, outputFile) {
          height = 8,
          width = 16,
          dpi = 220,
-         device = "pdf",
+
          file = outputFile)
 }
 
@@ -298,7 +408,7 @@ plotSplineWithNewCases <-function(data.table, input.table, spline.table, outputF
   minY <- max(min(spline.table$value),0)
   maxY <- max(spline.table$value)
   ylimMax <- max(data.table$new_cases)
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
     geom_line(aes(days.as.Date(data.table$t, minDate), rescale(data.table$new_cases, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
@@ -310,7 +420,7 @@ plotSplineWithNewCases <-function(data.table, input.table, spline.table, outputF
     scale_y_continuous(
       expression(paste(theta[est])),
       #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
-      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "new reported cases\n")) +
+      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "New cases")) +
     xlab("")+
     #coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
     scale_x_date(date_breaks = "2 months" , date_labels = "%b %Y") +
@@ -320,10 +430,10 @@ plotSplineWithNewCases <-function(data.table, input.table, spline.table, outputF
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=16),
-      axis.title = element_text(size=16),
-      legend.text = element_text(size=15),
-      legend.title = element_text(size=17, face="bold"),
+      axis.text = element_text(size=20),
+      axis.title = element_text(size=20),
+      legend.text = element_text(size=20),
+      legend.title = element_text(size=20, face="bold"),
       panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
       panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
@@ -332,63 +442,159 @@ plotSplineWithNewCases <-function(data.table, input.table, spline.table, outputF
            height = 6,
            width = 10,
            dpi = 220,
-           device = "pdf",
+
            file = outputFile)
 }
 
-plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,meta.table,minDate,outputFile,outputFileDots) {
+plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,meta.table,minDate,outputFile,outputFileDots,measure_country.table,group) {
   minX <- 0
-  maxX <- max(cases.table$new_cases)
+  maxX <- max(cases.table$new_cases_avrg)+0.5*max(cases.table$new_cases_avrg)
   minY <- 0
-  maxY <- max(interp.table$smoothMedian)
-  ylimMax <- max(cases.table$new_cases)
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
-  print(minY)
+  maxY <- max(interp.table$smoothMedian)+0.5*max(interp.table$smoothMedian)
+  ylimMax <- max(cases.table$new_cases_avrg)
+  # Number of ticks - every X months
+  break.dates <- days.as.Date(cases.table$t, minDate)
+  months = interval(ymd(min(break.dates)),ymd(max(break.dates)))
+  months = ceiling((months / months(1))/5)
+  # Min/Max dates
+  xlimMax = min(max(days.as.Date(interp.table$t, minDate)),max(days.as.Date(cases.table$t, minDate)))
+  xlimMin = max(min(days.as.Date(interp.table$t, minDate)),min(days.as.Date(cases.table$t, minDate)))
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   p_spline_esti_realN <- ggplot() +
     #geom_histogram(data=meta.table, aes(x=days.as.Date(meta.table$t, minDate),y=..density..), fill="black", alpha=0.2, bins=round(nrow(input.table)/7)) +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
-    geom_line(aes(x=days.as.Date(cases.table$t, minDate), y=rescale(cases.table$new_cases_avrg, minX, maxX, minY, maxY)),size=1.5, color=mycolors["trued"], alpha=0.5)+
-    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smoothMedian), size=1.5, colour=mycolors["esti"], alpha=0.7)+
-    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth5), size=0.5, colour=mycolors["esti"], alpha=0.7, linetype="dashed")+
+    geom_line(aes(x=days.as.Date(cases.table$t, minDate), y=rescale(cases.table$new_cases_avrg, minX, maxX, minY, maxY)),size=2.3, color=mycolors["trued"], alpha=0.5)+
+    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smoothMedian), size=2.3, colour=mycolors["esti"], alpha=0.5)+
+    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth5), size=1.3, colour=mycolors["esti"], alpha=0.55, linetype="dashed")+
     geom_rug(data=meta.table, aes(x = days.as.Date(meta.table$t, minDate)), inherit.aes = F)+
-    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth95), size=0.5, colour=mycolors["esti"], alpha=0.7, linetype="dashed")+
+    geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth95), size=1.3, colour=mycolors["esti"], alpha=0.55, linetype="dashed")+
     scale_size_continuous(range = c(min(input.table$pointSize), max(input.table$pointSize))) +
     scale_y_continuous(
       expression(paste(theta[est])),
       #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
-      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "new reported cases\n")) +
+      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "Reported cases")) +
     xlab("")+
+    labs(title=paste(group))+
     #coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
-    scale_x_date(date_breaks = "2 months" , date_labels = "%b %Y") +
+    scale_x_date(date_breaks = paste0(months," months"), date_minor_breaks="2 weeks" , date_labels = "%b %Y",
+      limits=c(xlimMin,xlimMax)) +
     theme(
       axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
       axis.title.y = element_text(color = mycolors["estid"]),
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=18),
-      axis.title = element_text(size=18),
-      legend.text = element_text(size=18),
-      legend.title = element_text(size=18, face="bold"),
+      axis.text = element_text(size=24),
+      axis.title = element_text(size=26),
+      plot.title = element_text(size=34,face = "bold"),
+      legend.text = element_text(size=20),
+      legend.title = element_text(size=20, face="bold"),
       panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.border = element_rect(colour = "black", fill=NA, size=1.5),
       panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
+    p_spline_esti_realN2 <- p_spline_esti_realN
+    if(nrow(measure_country.table) != 0) {
+      ypos = maxY
+      #interp.table$date <- days.as.Date(interp.table$t, minDate)
+      # Get value of interpolation to place label just above
+      measure_country.table$date <- as.Date(measure_country.table$date)
+      interp.table$date <- as.Date(interp.table$date)
+      merged.table <- merge(measure_country.table, interp.table, by.x="date", by.y="date")
+      merged.table$ypos <- merged.table$smooth95+merged.table$smooth95
+      #ypos = max(layer_scales(p_spline_esti_realN)[["y"]][["range"]][["range"]])
+      p_spline_esti_realN2 <- p_spline_esti_realN2 +
+        geom_vline(xintercept = as.Date(merged.table$date), linetype="dashed", color = "black") +
+        geom_shadowtext(aes(x = as.Date(merged.table$date), y = ypos),
+          label = paste0(merged.table$dateStr, "\n", merged.table$measure),lineheight=0.7,nudge_x=-2, nudge_y=-10,
+          angle=90, vjust=0.6, hjust="right", colour="black", bg.colour="white", fontface = "bold", size = 5.5)
+    }
 
-    ggsave(p_spline_esti_realN,
-             height = 5,
+    ggsave(p_spline_esti_realN2,
+             height = 6,
              width = 10,
              dpi = 220,
-             device = "pdf",
              file = outputFile)
-    p_spline_esti_realN <-    p_spline_esti_realN +
-         geom_point(aes(x=days.as.Date(input.table$t, minDate), y=input.table$value), colour=mycolors["esti"], size=input.table$pointSize, alpha=0.3)
+    print(input.table$sampleSize)
+    p_spline_esti_realN <- p_spline_esti_realN +
+         geom_point(aes(x=days.as.Date(input.table$t, minDate), y=input.table$value, size=input.table$sampleSize), colour="dodgerblue4", fill=mycolors["esti"], alpha=0.55) +
+         scale_size(name="Sample size",range = c(0,10), breaks = c(100,500,1000,1500,2000)) +
+         theme(
+           axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+           axis.title.y = element_text(color = mycolors["estid"]),
+           axis.text.y = element_text(color = mycolors["estid"]),
+           axis.title.y.right = element_text(color = mycolors["trued"]),
+           axis.text.y.right = element_text(color = mycolors["trued"]),
+           axis.text = element_text(size=24),
+           axis.title = element_text(size=26),
+           plot.title = element_text(size=34,face = "bold"),
+           legend.position="bottom",
+           legend.text = element_text(size=20),
+           legend.title = element_text(size=20, face="bold"),
+           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+           panel.border = element_rect(colour = "black", fill=NA, size=1.5),
+           panel.background = element_blank(), axis.line = element_line(colour = "black")
+         ) #+ labs(color='NEW LEGEND TITLE') #guides(fill=guide_legend(title="Sample size"))
+         if(nrow(measure_country.table) != 0) {
+           ypos = maxY
+           #interp.table$date <- days.as.Date(interp.table$t, minDate)
+           # Get value of interpolation to place label just above
+           measure_country.table$date <- as.Date(measure_country.table$date)
+           interp.table$date <- as.Date(interp.table$date)
+           merged.table <- merge(measure_country.table, interp.table, by.x="date", by.y="date")
+           merged.table$ypos <- merged.table$smooth95+merged.table$smooth95
+           #ypos = max(layer_scales(p_spline_esti_realN)[["y"]][["range"]][["range"]])
+           p_spline_esti_realN <- p_spline_esti_realN +
+             geom_vline(xintercept = as.Date(merged.table$date), linetype="dashed", color = "black") +
+             geom_shadowtext(aes(x = as.Date(merged.table$date), y = ypos),
+               label = paste0(merged.table$dateStr, "\n", merged.table$measure),lineheight=0.7, nudge_x=-2, nudge_y=-10,
+               angle=90, vjust=0.6, hjust="right", colour="black", bg.colour="white", fontface = "bold", size = 5.5)
+         }
     ggsave(p_spline_esti_realN,
-             height = 5,
+             height = 7,
              width = 10,
              dpi = 220,
-             device = "pdf",
              file = outputFileDots)
   }
+
+plotR0BEAST <- function(input.table,outputFile,group) {
+  break.dates <- input.table$date
+  months = interval(ymd(min(break.dates)),ymd(max(break.dates)))
+  months = ceiling((months / months(1))/5)
+  colours = c("esti"="dodgerblue4","beast"="springgreen4")
+  plot <- ggplot() +
+    geom_hline(yintercept=1,colour="darkgray",linetype="dashed",alpha=0.5,size=2) +
+    geom_line(data=input.table,aes(x=as.Date(date),y=est.median,colour="dodgerblue4"),size=2) +
+    #geom_line(data=input.table,aes(x=period,y=est.lower),colour=colours["esti"],size=2,linetype="dashed") +
+    #geom_line(data=input.table,aes(x=period,y=est.upper),colour=colours["esti"],size=2,linetype="dashed") +
+    geom_line(data=input.table,aes(x=as.Date(date),y=beast.median,colour="springgreen4"),size=2) +
+    #geom_line(data=input.table,aes(x=period,y=beast.lower),colour=colours["beast"],size=2,linetype="dashed") +
+    #geom_line(data=input.table,aes(x=period,y=beast.upper),colour=colours["beast"],size=2,linetype="dashed") +
+    geom_ribbon(data=input.table,aes(ymin=beast.lower, ymax=beast.upper, x=as.Date(date)), fill = "springgreen4", alpha = 0.2) +
+    geom_ribbon(data=input.table,aes(ymin=est.lower, ymax=est.upper, x=as.Date(date)), fill = "dodgerblue4", alpha = 0.2) +
+    ylab(expression(R[0])) +
+    labs(title=paste(group)) +
+    scale_colour_manual(name="",values=c("dodgerblue4","springgreen4"),labels = c(expression(theta[est]), "BEAST")) +
+    xlab("") +
+    scale_x_date(date_breaks = paste0(months," months"), date_minor_breaks="2 weeks" , date_labels = "%b %Y") +
+    theme(
+      axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+      axis.text = element_text(size=24),
+      axis.title = element_text(size=26),
+      plot.title = element_text(size=34,face = "bold"),
+      legend.text = element_text(size=20),
+      legend.position="bottom",
+      legend.title = element_text(size=20, face="bold"),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.border = element_rect(colour = "black", fill=NA, size=1.5),
+      panel.background = element_blank(), axis.line = element_line(colour = "black")
+    )
+    ggsave(plot,
+             height = 7,
+             width = 10,
+             dpi = 220,
+             file = outputFile)
+}
 
 plotInterpolationWithNewCasesHist <- function(cases.table,interp.table,input.table,meta.table,minDate,outputFile,outputFileDots) {
   minX <- 0
@@ -396,7 +602,7 @@ plotInterpolationWithNewCasesHist <- function(cases.table,interp.table,input.tab
   minY <- 0
   maxY <- max(interp.table$smoothMedian)
   ylimMax <- max(cases.table$new_cases)
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   print(minY)
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
@@ -419,10 +625,10 @@ plotInterpolationWithNewCasesHist <- function(cases.table,interp.table,input.tab
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
       axis.text.y.right = element_text(color = mycolors["trued"]),
-      axis.text = element_text(size=16),
-      axis.title = element_text(size=16),
-      legend.text = element_text(size=15),
-      legend.title = element_text(size=17, face="bold"),
+      axis.text = element_text(size=20),
+      axis.title = element_text(size=20),
+      legend.text = element_text(size=20),
+      legend.title = element_text(size=20, face="bold"),
       panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
       panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
@@ -431,7 +637,7 @@ plotInterpolationWithNewCasesHist <- function(cases.table,interp.table,input.tab
              height = 6,
              width = 10,
              dpi = 220,
-             device = "pdf",
+
              file = outputFile)
     p_spline_esti_realN <-    p_spline_esti_realN +
          geom_point(aes(x=days.as.Date(input.table$t, minDate), y=input.table$value), colour=mycolors["esti"], size=input.table$pointSize, alpha=0.3)
@@ -439,7 +645,6 @@ plotInterpolationWithNewCasesHist <- function(cases.table,interp.table,input.tab
              height = 6,
              width = 10,
              dpi = 220,
-             device = "pdf",
              file = outputFileDots)
 }
 
@@ -453,7 +658,7 @@ plotSplineWithNewCasesSE <-function(data.table, spline.table, outputFile_trueNSE
   minDate <- min(as.Date(data.table$meanBinDate))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
 
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   rel_vs_true_ratio = max(spline.table$value)/max(spline.table$value_trueN)
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
@@ -486,13 +691,13 @@ plotSplineWithNewCasesSE <-function(data.table, spline.table, outputFile_trueNSE
            height = 8,
            width = 16,
            dpi = 220,
-           device = "pdf",
+
            file = outputFile)
 }
 
 plotCummulativeSampleSize <- function(data.table,outputFile) {
   minDate <- min(as.Date(data.table$meanBinDate))
-  mycolors <- c("estid"="darkred", "trued"="darkblue","esti"="red", "true"="blue")
+  mycolors <- c("estid"="darkred", "trued"="dodgerblue4","esti"="red", "true"="dodgerblue4")
   p_sample_size <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
     geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=2, color=mycolors["trued"], alpha=0.5)+
@@ -507,7 +712,7 @@ plotCummulativeSampleSize <- function(data.table,outputFile) {
            height = 8,
            width = 16,
            dpi = 220,
-           device = "pdf",
+
            file = outputFile)
 }
 
@@ -522,7 +727,7 @@ plotSplineWithNewCasesSeqData <-function(data.table, spline.table, meta.table.fr
   minDate <- min(as.Date(data.table$meanBinDate))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
 
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
     geom_point(aes(days.as.Date(data.table$t, minDate), rescale(data.table$trueN, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
@@ -593,7 +798,7 @@ plotSplineWithNewCasesSESeqData <-function(data.table, spline.table, meta.table,
   minDate <- min(as.Date(data.table$meanBinDate))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
 
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
     #geom_line(aes(x=doy.as.Date(spline.table$doy), y=spline.table$value_trueN*rel_vs_true_ratio), color=mycolors["true"], size = 2, alpha=0.5)+
@@ -662,7 +867,7 @@ plotSplineWithNewCasesSeqDataRepData <-function(data.table, cases.table, spline.
   minDateRepCases <- min(as.Date(cases.table$date))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
 
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="blue", "true"="red")
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
     #geom_point(aes(days.as.Date(data.table$t, minDate), rescale(data.table$trueN, minX, maxX, minY, maxY)),size=2, color=mycolors["trued"], alpha=0.5)+
@@ -741,7 +946,7 @@ plotSplineWithNewCasesSeqDataRepDataSplined <-function(data.table, cases.table, 
   print(maxX)
   print(minY)
   print(maxY)
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="blue", "true"="red")
   p_spline_esti_realN <- ggplot()
   if(withCI) {
     p_spline_esti_realN <- p_spline_esti_realN +
@@ -825,7 +1030,7 @@ plotSplineWithNewCasesSESeqDataRepData <-function(data.table, spline.table, spli
   minDate <- min(as.Date(data.table$meanBinDate))
   maxDate <- max(days.as.Date(spline.table$t, minDate))
 
-  mycolors <- c("estid"="darkblue", "trued"="darkred","esti"="blue", "true"="red")
+  mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="blue", "true"="red")
   rel_vs_true_ratio = max(spline.table$value)/max(spline.table$value_trueN)
   p_spline_esti_realN <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
@@ -886,7 +1091,7 @@ plotSplineWithNewCasesSESeqDataRepData <-function(data.table, spline.table, spli
 
 plotCummulativeSampleSize <- function(data.table,outputFile) {
   minDate <- min(as.Date(data.table$meanBinDate))
-  mycolors <- c("estid"="darkred", "trued"="darkblue","esti"="red", "true"="blue")
+  mycolors <- c("estid"="darkred", "trued"="dodgerblue4","esti"="red", "true"="blue")
   p_sample_size <- ggplot() +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
     geom_line(aes(days.as.Date(data.table$t, minDate), cumsum(data.table$sampleSize)),size=2, color=mycolors["trued"], alpha=0.5)+
@@ -964,7 +1169,7 @@ plotDerivativesBoxPLot <- function(spline.deriv.table,outputFile) {
            height = 4,
            width = 3.5,
            dpi = 220,
-           device = "pdf",
+
            file = outputFile)
 
 }
@@ -999,7 +1204,7 @@ plotRzero <- function(spline.deriv.table, infPer, theta.table, outputFile) {
          height = 6,
          width = 16,
          dpi = 220,
-         device = "pdf",
+
          file = outputFile)
 
 }

@@ -7,6 +7,7 @@ samples: "/path/to/samples/fasta"
 # 22-01-2020: "%d-%m-%Y"
 # 2020-02-24T18:00:00: "%Y-%m-%dT%H:%M:%S"
 reported_cases: ["/path/to/cases/table",",","date","new_cases","%Y-%m-%d"]
+#reported_cases: ["/Users/mariatrofimova/Documents/GitHub/nCovPopDyn/reported_cases/Wales_2021-02-27.csv",",","date","newCasesByPublishDate","%Y-%m-%d"]
 # 3. Consensus sequence full file path in FASTA format
 consensus: "/path/to/reference/fasta"
 # 4. Number of sequences per bin for binning mode with equally sized bins
