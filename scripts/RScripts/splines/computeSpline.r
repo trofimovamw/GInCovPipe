@@ -105,12 +105,15 @@ cases.table.full$date <- as.Date(cases.table.full$date, table_date_format)
 meta.table$Collection_date <- as.Date(meta.table$Collection_date, table_date_format)
 
 # Make cases table with t, new_cases, dates
-cases.table <- data.frame(new_cases=cases.table.full$new_cases,date=cases.table.full$date)
+cases.table <- data.frame(new_cases=cases.table.full$new_cases,
+                          date=cases.table.full$date,
+                          new_cases_per_million=cases.table.full$new_cases_per_million)
 
 # Compute the splines and dot sizes
-cat("--- Compute spline and interpolation ---\n\n")
+cat("--- Compute interpolation ---\n\n")
 input.table$t <- as.days_since_global_d0(input.table$meanBinDate,minDate)
 meta.table$t <- as.days_since_global_d0(meta.table$Collection_date,minDate)
+
 pointSize <- c()
 for (i in (1:nrow(input.table))) {
   # rand*(UB1-LB1) + LB1
@@ -147,7 +150,6 @@ cases.table$new_cases[is.na(cases.table$new_cases)] <- 0
 cases.table$new_cases_avrg <- filter(cases.table$new_cases, rep(1/7,7))
 cases.table <- na.omit(cases.table)
 cases.table$country <- rep(country,nrow(cases.table))
-print(cases.table$new_cases_avrg)
 
 cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
 
@@ -171,7 +173,7 @@ measure.table = read.table("/Users/mariatrofimova/Desktop/restrictions_new.csv",
 # Wallinga and Teunis (2004)
 # Generation intervals distribution - lognormal with mean = 5, sd = 1
 GT <- generation.time(type = "gamma",
-                      val = c(5,2), truncate = NULL, step = 1, first.half = TRUE,
+                      val = c(5,1.9), truncate = NULL, step = 1, first.half = TRUE,
                       p0 = TRUE)
 td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT,t=days.as.Date(interp.table$t, minDate))
 td.table <- data.frame(t=interp.table[1:length(td$R),]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
@@ -254,11 +256,21 @@ interp.table2$qtMedian <- qtm
 interp.table2$qt5 <- qt5
 interp.table2$qt95 <- qt95
 
+cases.table$tenK_new_cases <- cases.table$new_cases_per_million*10
+cases.table$tenK_new_cases[cases.table$tenK_new_cases<0] <- 0
+cases.table$tenK_new_cases[is.na(cases.table$tenK_new_cases)] <- 0
+cases.table$tenK_new_cases <- filter(cases.table$tenK_new_cases, rep(1/7,7))
+print(cases.table)
+cases.table$tenK_new_cases[is.na(cases.table$tenK_new_cases)] <- 0
+
 #Write tables and plot
 outputFileInter<-paste0(normalizePath(outputDir),"/rep_cases_interp_smoothed_",fileName)
 outputFileInterDots<-paste0(normalizePath(outputDir),"/","rep_cases_interp_smoothed_wdots_",fileName)
 write.csv(interp.table2,paste0(outputDir,"/interpolation_smooth_",country,".csv"), row.names = F, col.names = T)
 plotInterpolationWithNewCases(cases.table, interp.table2, input.table, meta.table, minDate, outputFileInter, outputFileInterDots,measure.table[which(measure.table$country==country),],country)
+outputFileInter<-paste0(normalizePath(outputDir),"/100K_rep_cases_interp_smoothed_",fileName)
+outputFileInterDots<-paste0(normalizePath(outputDir),"/","100K_rep_cases_interp_smoothed_wdots_",fileName)
+plotInterpolationWithNewCasesPer100K(cases.table, interp.table2, input.table, meta.table, minDate, outputFileInter, outputFileInterDots,measure.table[which(measure.table$country==country),],country)
 
 # Qt plot
 outputFileQt <- paste0(normalizePath(outputDir),"/","qt_interp_smoothed_",fileName)
@@ -351,35 +363,40 @@ outputFileD2Log <- paste0(normalizePath(outputDir),"/","cases_wt04_double_smooot
 plotRzeroDouble(inp2,minDate,outputFileD2,outputFileD2Log,measure.table[which(measure.table$country==country),])
 #BEAST comparison
 # Bin the values - R0s
-values.vec <- c()
-border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-06-15","2020-08-20","2020-10-19","2021-03-30"))
-#border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-07-19","2020-09-13","2020-10-26","2021-03-30"))
-tdc.table$date <- days.as.Date(tdc.table$t, minDate)
-group.means <- c()
-# 16.03-11.05-15.06-20.08-19.10
-for (i in (1:nrow(tdc.table))){
-  for (j in (2:length(border.dates))){
-    if ((tdc.table$date[i]>=border.dates[j-1]) & (tdc.table$date[i]<border.dates[j])){
-      values.vec <- c(values.vec,(j-1))
-      group.means <- c(group.means,(border.dates[j]-border.dates[j-1])/2)
-    }
-  }
-}
-
-tdc.table$group <- values.vec
-#mean.tdc.table <- aggregate(tdc.table$value, list(tdc.table$group), FUN = 'quantile', probs = 0.05)
-tdc.table.95 <- ddply(tdc.table, "group", summarise, WQ95 = quantile(value, .95))
-tdc.table.5 <- ddply(tdc.table, "group", summarise, WQ50 = quantile(value, .5))
-tdc.table.05 <- ddply(tdc.table, "group", summarise, WQ05 = quantile(value, .05))
-
-beast.table <- read.table(args[9], header =T, sep=" ", as.is=T, quote = "\"",allowEscapes=TRUE)
-beast.table.95 <- ddply(beast.table, "interval", summarise, WQ95 = quantile(R, .95))
-beast.table.5 <- ddply(beast.table, "interval", summarise, WQ50 = quantile(R, .5))
-beast.table.05 <- ddply(beast.table, "interval", summarise, WQ05 = quantile(R, .05))
-
-rzero.table <- data.frame(period=tdc.table.5$group,est.median=tdc.table.5$WQ50,
-                          est.lower=tdc.table.05$WQ05, est.upper=tdc.table.95$WQ95,
-                          beast.median=beast.table.5$WQ50, date=border.dates[1:(length(border.dates)-1)],
-                          beast.lower=beast.table.05$WQ05, beast.upper=beast.table.95$WQ95)
-outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_",fileName)
-plotR0BEAST(rzero.table,outputFileR0,country)
+# values.vec <- c()
+# #Switzerland
+# border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-06-15","2020-08-20","2020-10-19","2021-03-30"))
+# #Victoria
+# border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-07-19","2020-09-13","2020-10-26","2021-03-30"))
+# tdc.table$date <- days.as.Date(tdc.table$t, minDate)
+# group.means <- c()
+# # 16.03-11.05-15.06-20.08-19.10
+# for (i in (1:nrow(tdc.table))){
+#   for (j in (2:length(border.dates))){
+#     if ((tdc.table$date[i]>=border.dates[j-1]) & (tdc.table$date[i]<border.dates[j])){
+#       values.vec <- c(values.vec,(j-1))
+#       group.means <- c(group.means,(border.dates[j]-border.dates[j-1])/2)
+#     }
+#   }
+# }
+#
+# tdc.table$group <- values.vec
+# #mean.tdc.table <- aggregate(tdc.table$value, list(tdc.table$group), FUN = 'quantile', probs = 0.05)
+# tdc.table.95 <- ddply(tdc.table, "group", summarise, WQ95 = quantile(value, .95))
+# tdc.table.5 <- ddply(tdc.table, "group", summarise, WQ50 = quantile(value, .5))
+# tdc.table.05 <- ddply(tdc.table, "group", summarise, WQ05 = quantile(value, .05))
+# #
+# beast.table <- read.table(args[9], header =T, sep=" ", as.is=T, quote = "\"",allowEscapes=TRUE)
+# beast.table.95 <- ddply(beast.table, "interval", summarise, WQ95 = quantile(R, .95))
+# beast.table.5 <- ddply(beast.table, "interval", summarise, WQ50 = quantile(R, .5))
+# beast.table.05 <- ddply(beast.table, "interval", summarise, WQ05 = quantile(R, .05))
+#
+# rzero.table <- data.frame(period=tdc.table.5$group,est.median=tdc.table.5$WQ50,
+#                           est.lower=tdc.table.05$WQ05, est.upper=tdc.table.95$WQ95,
+#                           beast.median=beast.table.5$WQ50, date=border.dates[1:(length(border.dates)-1)],
+#                           beast.lower=beast.table.05$WQ05, beast.upper=beast.table.95$WQ95)
+# rzero.table <- rbind(rzero.table, rzero.table[nrow(rzero.table),])
+# rzero.table$date[nrow(rzero.table)] <- max(tdc.table$date)
+# print(rzero.table)
+# outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_",fileName)
+# plotR0BEAST(rzero.table,tdc.table,outputFileR0,minDate,country)
