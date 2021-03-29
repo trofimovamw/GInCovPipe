@@ -29,15 +29,13 @@ if not num_per_bin:
     # Read table containing file statistics created by samtools
     stats = pd.read_table(str(stats_name),delimiter='\t',header=None)
     num_reads = stats.iloc[0,2]
+    num_per_bin.append(int(math.floor(num_reads*0.02)))
     num_per_bin.append(int(math.floor(num_reads*0.05)))
     num_per_bin.append(int(math.floor(num_reads*0.07)))
-    num_per_bin.append(int(math.floor(num_reads*0.1)))
-    num_per_bin.append(int(math.floor(num_reads*0.2)))
     print("No sizes for binning by equal size provided, binning will use the\n following default size fractions:\n")
-    print("      * 5%%, or %i sequences" % int(num_per_bin[0]))
-    print("      * 7%%, or %i sequences" % int(num_per_bin[1]))
-    print("      * 10%%, or %i sequences" % int(num_per_bin[2]))
-    print("      * 20%%, or %i sequences" % int(num_per_bin[3]))
+    print("      * 2%%, or %i sequences" % int(num_per_bin[0]))
+    print("      * 5%%, or %i sequences" % int(num_per_bin[1]))
+    print("      * 7%%, or %i sequences" % int(num_per_bin[2]))
     print('-'*80)
     
 days_per_bin = snakemake.params.eq_days

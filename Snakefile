@@ -15,7 +15,7 @@ report: "report/workflow.rst"
 
 rule all:
 	input:
-		"results/splines/out_spline.pdf"
+		"results/splines/out_interp.pdf"
 
 
 rule strip_whitespaces:
@@ -154,22 +154,44 @@ rule theta_estimates:
 	script:
 		"scripts/metrics/run_fp.py"
 
-rule splines:
-	input:
-		infile = "results/plots/table_merged_thetas_var_from_size.tsv"
-	params:
-		rep_cases = config["reported_cases"][0],
-		table_delim = config["reported_cases"][1],
-		date_col = config["reported_cases"][2],
-		cases_col = config["reported_cases"][3],
-		date_format = config["reported_cases"][4],
-		group = config["group"]
-	conda:
-		"env/env.yml"
-	output:
-		result = "results/splines/out_spline.pdf",
-		#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
-	shell:
-		"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeSpline.R {input.infile} \
-		{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
-		{params.date_format} {params.group} {output.result}"
+if config["R0"]=='y':
+	rule interpolationR0:
+		input:
+			infile = "results/plots/table_merged_thetas_var_from_size.tsv"
+		params:
+			rep_cases = config["reported_cases"][0],
+			table_delim = config["reported_cases"][1],
+			date_col = config["reported_cases"][2],
+			cases_col = config["reported_cases"][3],
+			date_format = config["reported_cases"][4],
+			group = config["group"]
+		conda:
+			"env/env.yml"
+		output:
+			result = "results/splines/out_interp.pdf",
+			#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
+		shell:
+			"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolationR0.R {input.infile} \
+			{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
+			{params.date_format} {params.group} {output.result}"
+
+else:
+	rule interpolation:
+		input:
+			infile = "results/plots/table_merged_thetas_var_from_size.tsv"
+		params:
+			rep_cases = config["reported_cases"][0],
+			table_delim = config["reported_cases"][1],
+			date_col = config["reported_cases"][2],
+			cases_col = config["reported_cases"][3],
+			date_format = config["reported_cases"][4],
+			group = config["group"]
+		conda:
+			"env/env.yml"
+		output:
+			result = "results/splines/out_interp.pdf",
+			#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
+		shell:
+			"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolation.R {input.infile} \
+			{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
+			{params.date_format} {params.group} {output.result}"

@@ -118,14 +118,11 @@ for folder in binnings:
     filt = parameterEstimation(seq_list_base_complete,seq_list_pairs_complete,reference,freqCutoff)
     mut_proportion, filtered_seqset = filt.run()
     print("      Done.\n")
-    print("      Starting to compute optimal metric parameters...")
-    #Theta from origins - MLE
-    analyze = analyzeTrajectory(filtered_seqset, mut_proportion, '')
-    thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
-    weeks = np.arange(0,len(thetas))
-    print("      Done.\n")
-    print("      Starting to write tables and making complementary plots...")
-    #1. Get the names of reads from headers and dates
+
+
+    ##### time span calculation
+
+    # 1. Get the names of reads from headers and dates
     list_headers = os.listdir(headers_dir)
     headers = []
     for file in list_headers:
@@ -141,25 +138,36 @@ for folder in binnings:
     times = []
     # Set of dates that have sequences in the bin
     dates_per_bin = []
+
+    median_dates = []
+    max_dates = []
+    min_dates = []
     i = 0
-    # How many days do sequences from one bin span? - from parameter in config 
+    # How many days do sequences from one bin span? - from parameter in config
     # later check if the bin is "long enough"
     num_days_per_bin = []
     for header_file in headers:
-        path =  headers_dir+ '/'+header_file
+        path = headers_dir + '/' + header_file
         table = pd.read_table(path, header=0)
         if not table.empty:
             dates = table['date'].tolist()
             dates_dt = np.array(dates, dtype='datetime64[s]')
-            delta_days = (max(dates_dt)-min(dates_dt))/np.timedelta64(1,'D')
-            num_days_per_bin.append(delta_days+1)
+            delta_days = (max(dates_dt) - min(dates_dt)) / np.timedelta64(1, 'D') + 1
+            num_days_per_bin.append(delta_days)
             mean = (np.array(dates, dtype='datetime64[s]').view('i8').mean().astype('datetime64[s]'))
-            #print(mean)
+            # collect also median and max date of bin
+            median = np.median(np.array(dates, dtype='datetime64[s]').view('i8')).astype('datetime64[s]')
+            minDate = (np.array(dates, dtype='datetime64[s]').view('i8').min().astype('datetime64[s]'))
+            maxDate = (np.array(dates, dtype='datetime64[s]').view('i8').max().astype('datetime64[s]'))
+            median_dates.append(str(median)[:10])
+            max_dates.append(str(maxDate)[:10])
+            min_dates.append(str(minDate)[:10])
+            # print(mean)
             lists_of_dates.append(dates)
             dates_per_bin.append(set(dates))
             mean_header_bin.append(str(mean)[:10])
             times.append(i)
-            i+=1
+            i += 1
 
     cases_on_mean_date = []
     for i, date in enumerate(mean_header_bin):
@@ -168,6 +176,21 @@ for folder in binnings:
             cases_on_mean_date.append(new_positives[index])
         else:
             cases_on_mean_date.append(0)
+    #######
+
+
+
+
+    print("      Starting to compute optimal metric parameters...")
+    #Theta from origins - MLE
+    analyze = analyzeTrajectory(filtered_seqset, mut_proportion, num_days_per_bin, '')
+    thetas, variance, variance_size, num_seqs, num_mut, origins = analyze.analyzeBinsMLE()
+    weeks = np.arange(0,len(thetas))
+    print("      Done.\n")
+    print("      Starting to write tables and making complementary plots...")
+
+
+    #### Put 1) above
     
     
     # 2) Get the total number of cases on dates that have sequences
@@ -235,15 +258,26 @@ for folder in binnings:
     with open(table_path, 'w+', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter='\t',
                                 quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(["date","value","variance_size","variance_mle","num_seqs","times","cases_on_mean_date","cases_on_all_dates_in_seqbin","num_days_per_bin"])
+        # add further dates
+        #writer.writerow(["date","value","variance_size","variance_mle","num_seqs","times","cases_on_mean_date","cases_on_all_dates_in_seqbin","num_days_per_bin"])
+        writer.writerow(["date","value","variance_size","variance_mle","num_seqs","times","cases_on_mean_date",
+                         "cases_on_all_dates_in_seqbin","num_days_per_bin", "median_date", "min_date", "max_date"])
         for i in range(len(weeks)):
-            writer.writerow([mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]])
+			#writer.writerow([mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i],
+	        #                 cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i]])
+            writer.writerow([mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i],
+                             cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i],
+                            median_dates[i], min_dates[i], max_dates[i]])
     print("      Done.\n")
     # Write to merged bins dataset
     for i, date in enumerate(mean_header_bin):
         if not (folder.startswith("fuzzy")):
             if not i+1 == len(mean_header_bin):
-                bin_merging_data.append((mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i], times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i], num_days_per_bin[i],folder))
+                bin_merging_data.append((mean_header_bin[i], thetas[i], variance_size[i], variance[i], num_seqs[i],
+                                         times[i], cases_on_mean_date[i], cases_on_all_dates_in_seqbin[i],
+                                         #num_days_per_bin[i]))
+                                         # add further dates
+                                         num_days_per_bin[i], median_dates[i], max_dates[i], folder))
 
 
 # Make merged dataset sorted by date
@@ -261,8 +295,9 @@ timesm = []
 cases_on_mean_datem = []
 cases_on_all_dates_in_seqbinm = []
 num_days_per_binm = []
-folders = []
-
+dates_medianm = []
+dates_maxm = []
+bin_typesm = []
 
 for i, mbin in enumerate(bin_merging_data_):
     datesm.append(mbin[0])
@@ -274,7 +309,9 @@ for i, mbin in enumerate(bin_merging_data_):
     cases_on_mean_datem.append(mbin[6])
     cases_on_all_dates_in_seqbinm.append(mbin[7])
     num_days_per_binm.append(mbin[8])
-    folders.append(mbin[-1])
+    dates_medianm.append(mbin[9])
+    dates_maxm.append(mbin[10])
+    bin_typesm.append(mbin[11])
 
 
 print("\n      Making the final results table...")
@@ -285,11 +322,13 @@ table_path = str(out_dir) + '/' + name_table
 with open(table_path, 'w+', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter='\t',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(["t","value","value_nonorm","variance","trueN","meanBinDate","sampleSize","binningMode"])
+    writer.writerow(["t","value","value_nonorm","variance","trueN","meanBinDate","sampleSize",
+                     "daysPerBin", "medianBinDate", "maxBinDate", "binning"])
     for i in range(len(times)):
         # If bin size==1/variance is bigger or equal to min_bin_size
         #if maxsize, minsize satisfied 
         if variance_sizem[i]<=1/int(min_bin_size) and num_days_per_binm[i]>=min_days_span and num_days_per_binm[i]<=max_days_span:
-            writer.writerow([times[i],thetasm[i],thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i],folders[i]])
+            writer.writerow([times[i],thetasm[i],thetasm[i],variance_sizem[i],cases_on_mean_datem[i],datesm[i],num_seqsm[i],
+                             num_days_per_binm[i], dates_medianm[i], dates_maxm[i], bin_typesm[i]])
         
 print("Done.\n")
