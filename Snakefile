@@ -7,7 +7,7 @@ import os
 
 report: "report/workflow.rst"
 
-#configfile: "config.yaml"
+configfile: "config.yaml"
 
 basefilename = os.path.basename(config["samples"])[:-6]
 
@@ -175,7 +175,7 @@ if config["R0"]=='y':
 			{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
 			{params.date_format} {params.group} {output.result}"
 
-else:
+if config["R0"]=='n':
 	rule interpolation:
 		input:
 			infile = "results/plots/table_merged_thetas_var_from_size.tsv"

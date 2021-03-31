@@ -13,7 +13,7 @@ dynamic_require <- function(package){
 }
 
 #"ggformula"
-for(p in c("ggplot2", "mgcv","grid","gridExtra","MASS")) {
+for(p in c("ggplot2", "mgcv","grid","gridExtra","MASS","scales")) {
   dynamic_require(p)
 }
 
@@ -52,8 +52,6 @@ outputFile<-file.path(args[8])
 
 cases.table.full = read.table(normalizePath(table_name), header=T, sep=table_delim)
 input.table = read.table(inputFile, header=T, sep = "\t")
-# Just for the plots, REMOVE
-meta.table = read.table("/Users/mariatrofimova/Documents/GitHub/nCovPopDyn/results/meta/meta_dates.tsv", header=T, sep = "\t")
 
 # Define output file and output directory
 fileName<-basename(outputFile)
@@ -99,7 +97,6 @@ minDate1 = min(as.Date(cases.table.full$date, table_date_format))
 minDate2 = min(as.Date(input.table$meanBinDate, table_date_format))
 minDate = min(c(minDate1,minDate2))
 cases.table.full$date <- as.Date(cases.table.full$date, table_date_format)
-meta.table$Collection_date <- as.Date(meta.table$Collection_date, table_date_format)
 
 # Make cases table with t, new_cases, dates
 cases.table <- data.frame(new_cases=cases.table.full$new_cases,date=cases.table.full$date)
@@ -107,7 +104,6 @@ cases.table <- data.frame(new_cases=cases.table.full$new_cases,date=cases.table.
 # Compute the splines and dot sizes
 cat("--- Compute spline and interpolation ---\n\n")
 input.table$t <- as.days_since_global_d0(input.table$meanBinDate,minDate)
-meta.table$t <- as.days_since_global_d0(meta.table$Collection_date,minDate)
 pointSize <- c()
 for (i in (1:nrow(input.table))) {
   # rand*(UB1-LB1) + LB1
@@ -131,7 +127,6 @@ cases.table$new_cases[is.na(cases.table$new_cases)] <- 0
 cases.table$new_cases_avrg <- filter(cases.table$new_cases, rep(1/7,7))
 cases.table <- na.omit(cases.table)
 cases.table$country <- rep(country,nrow(cases.table))
-print(cases.table$new_cases_avrg)
 
 cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
 
@@ -145,17 +140,12 @@ interp.table["date"] = days.as.Date(interp.table$t, minDate)
 interp.table[is.na(interp.table)] = 0
 # Remove rows with zeros in smooth median
 interp.table <- interp.table[interp.table$smoothMedian != 0,]
-# Measures table
-measure.table = read.table("/Users/mariatrofimova/Desktop/restrictions_new.csv", header =T, sep=";", as.is=T, quote = "\"",allowEscapes=TRUE)
 
 # Write tables and plot
 write.csv(interp.table,paste0(outputDir,"/interpolation_",country,".csv"), row.names = F, col.names = T)
 outputFileInter<-paste0(normalizePath(outputDir),"/",fileName)
 outputFileInterDots<-paste0(normalizePath(outputDir),"/","wdots_",fileName)
-plotInterpolationWithNewCases(cases.table, interp.table, input.table, meta.table, minDate, outputFileInter, outputFileInterDots,measure.table[which(measure.table$country==country),],country)
+plotInterpolationWithNewCases(cases.table, interp.table, input.table, minDate, outputFileInter, outputFileInterDots,country)
 
-
-# Write reported cases table
-write.csv(cases.table,paste0(outputDir,"/cases_",country,".csv"), row.names = F)
 # Write estimated theta table
 write.csv(input.table,paste0(outputDir,"/theta_",country,".csv"), row.names = F)

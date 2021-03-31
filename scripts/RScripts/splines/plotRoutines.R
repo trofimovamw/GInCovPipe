@@ -72,40 +72,39 @@ plotSplineWithNewCases <-function(data.table, input.table, spline.table, outputF
            file = outputFile)
 }
 
-plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,meta.table,minDate,outputFile,outputFileDots,measure_country.table,group) {
+
+plotInterpolationWithNewCases <- function(cases.table,interp.table,input.tables,minDate,outputFile,outputFileDots,group) {
   minX <- 0
-  maxX <- max(cases.table$new_cases_avrg)+0.5*max(cases.table$new_cases_avrg)
+  maxX <- max(cases.table$new_cases_avrg)+0.1*max(cases.table$new_cases_avrg)
   minY <- 0
-  maxY <- max(interp.table$smoothMedian)+0.5*max(interp.table$smoothMedian)
+  maxY <- max(interp.table$smoothMedian)+0.1*max(interp.table$smoothMedian)
   ylimMax <- max(cases.table$new_cases_avrg)
-  # Number of ticks - every X months
-  break.dates <- days.as.Date(cases.table$t, minDate)
-  months = interval(ymd(min(break.dates)),ymd(max(break.dates)))
-  months = ceiling((months / months(1))/5)
+  rel_vs_true_ratio = maxY/maxX
+  country = toString(group)
   # Min/Max dates
-  xlimMax = min(max(days.as.Date(interp.table$t, minDate)),max(days.as.Date(cases.table$t, minDate)))
-  xlimMin = max(min(days.as.Date(interp.table$t, minDate)),min(days.as.Date(cases.table$t, minDate)))
+  #xlimMax = min(max(days.as.Date(interp.table$t, minDate)),max(days.as.Date(cases.table$t, minDate)))
+  #xlimMin = max(min(days.as.Date(interp.table$t, minDate)),min(days.as.Date(cases.table$t, minDate)))
   mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   p_spline_esti_realN <- ggplot() +
+    #rescale(x, to = c(0, 1), from = range(x, na.rm = TRUE, finite = TRUE), ...)
     #geom_histogram(data=meta.table, aes(x=days.as.Date(meta.table$t, minDate),y=..density..), fill="black", alpha=0.2, bins=round(nrow(input.table)/7)) +
     #geom_point(aes(doy.as.Date(data.table$doy), data.table$trueN*rel_vs_true_ratio), size=2, color=mycolors["trued"], alpha=0.5)+
-    geom_line(aes(x=days.as.Date(cases.table$t, minDate), y=rescale(cases.table$new_cases_avrg, minX, maxX, minY, maxY)),size=2.3, color=mycolors["trued"], alpha=0.5)+
+    geom_line(aes(x=days.as.Date(cases.table$t, minDate), y=rescale(cases.table$new_cases_avrg, to=c(minY, maxY), from=range(cases.table$new_cases_avrg))),size=2.3, color=mycolors["trued"], alpha=0.5)+
     geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smoothMedian), size=2.3, colour=mycolors["esti"], alpha=0.5)+
     geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth5), size=1.3, colour=mycolors["esti"], alpha=0.55, linetype="dashed")+
-    geom_rug(data=meta.table, aes(x = days.as.Date(meta.table$t, minDate)), inherit.aes = F)+
+    #geom_rug(data=meta.table, aes(x = days.as.Date(meta.table$t, minDate)), inherit.aes = F, alpha=0.05)+
+    #geom_point(aes(x = days.as.Date(meta.table$t, minDate), y = 0),colour="black",size=3,shape=1,alpha=0.1) +
     geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth95), size=1.3, colour=mycolors["esti"], alpha=0.55, linetype="dashed")+
-    scale_size_continuous(range = c(min(input.table$pointSize), max(input.table$pointSize))) +
     scale_y_continuous(
       expression(paste(theta[est])),
-      #sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "new cases")
-      sec.axis = sec_axis(~ rescale(., minY, maxY, minX, maxX ), name = "Reported cases")) +
+      sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "Reported cases")) +
+      #sec.axis = sec_axis(~ rescale(cases.table$new_cases_avrg, to=c(minY, maxY), from=range(cases.table$new_cases_avrg)), name = "Reported cases")) +
     xlab("")+
-    labs(title=paste(group))+
+    labs(title=country)+
     #coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +
-    scale_x_date(date_breaks = paste0(months," months"), date_minor_breaks="2 weeks" , date_labels = "%b %Y",
-      limits=c(xlimMin,xlimMax)) +
+    scale_x_date(date_breaks = "1 months", date_labels = "%b %Y") +
     theme(
-      axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+      axis.text.x = element_text(size = 20, angle = 45, vjust = 1, hjust=1),
       axis.title.y = element_text(color = mycolors["estid"]),
       axis.text.y = element_text(color = mycolors["estid"]),
       axis.title.y.right = element_text(color = mycolors["trued"]),
@@ -119,19 +118,17 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
       panel.border = element_rect(colour = "black", fill=NA, size=1.5),
       panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
-    p_spline_esti_realN2 <- p_spline_esti_realN
 
-    ggsave(p_spline_esti_realN2,
-             height = 6,
+    ggsave(p_spline_esti_realN,
+             height = 8,
              width = 10,
              dpi = 220,
              file = outputFile)
-    print(input.table$sampleSize)
     p_spline_esti_realN <- p_spline_esti_realN +
          geom_point(aes(x=days.as.Date(input.table$t, minDate), y=input.table$value, size=input.table$sampleSize), colour="dodgerblue4", fill=mycolors["esti"], alpha=0.55) +
          scale_size(name="Sample size",range = c(0,10), breaks = c(100,500,1000,1500,2000)) +
          theme(
-           axis.text.x=element_text(angle = 0, vjust = 1, hjust=0),
+           axis.text.x=element_text(size = 20, angle = 45, vjust = 1, hjust=1),
            axis.title.y = element_text(color = mycolors["estid"]),
            axis.text.y = element_text(color = mycolors["estid"]),
            axis.title.y.right = element_text(color = mycolors["trued"]),
@@ -145,10 +142,10 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
            panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
            panel.border = element_rect(colour = "black", fill=NA, size=1.5),
            panel.background = element_blank(), axis.line = element_line(colour = "black")
-         ) 
+         )
 
     ggsave(p_spline_esti_realN,
-             height = 7,
+             height = 8,
              width = 10,
              dpi = 220,
              file = outputFileDots)
