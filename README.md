@@ -8,7 +8,7 @@ As an input the pipeline requires a file containing sequences and a one with a r
 For the sequences it is important that they contain a sequencing-, or better, sample-date. The date must have the format **%YYYY-%mm-%dd**
 and has to be either part of the sequence-name or provided in an additional tsv-file.
 - If the date is part of the sequence-name, then the name should look like this: **'some_name | %YYYY-%mm-%dd'**.   
-- If the date is provided in an additional file, then the file must have a column **'strain'**, containing the sequence name, and a column **'date'**, containing the date.
+- If the date is provided in an additional file, then the file must have a column **'strain'**, containing the sequence name, and a column **'date'**, containing the collection date of the sample. (still true?)
 
 ## Output
 The pipeline creates a folder **'results'**, containing all (intermediate) outputs, with the following structure:
@@ -25,12 +25,13 @@ The pipeline creates a folder **'results'**, containing all (intermediate) outpu
     │               ├── counts_*.tsv            # count matrix                       
     │               ├── header_*.tsv            # header files (seq. name & date)
     |               ├── range_*.tsv             # range of dates of the corresponding bin
-    │   ├── plots                               # Results plots (and tables)
+    │   ├── bins_results                        # Individual binning results plots (and tables)
+    │   ├── interpolation                       # Plots and tables for final interpolated trajectory
     │   └── raw                                 # Preprocessed files
     │   
     └── ...
 ```
-The final diversity analysis (plots and tables) can be found in the subfolder **results/plots** and the smoothed spline trajectory can be found in subfolder **results/splines**.
+The final diversity analysis (plots and tables) can be found in the subfolder **results/bins_results** and the smoothed spline trajectory can be found in subfolder **results/interpolation**.
 
 
 ## How to run this pipeline - A small instruction
@@ -70,7 +71,7 @@ conda install snakemake
 
 ### 2. Initialize the pipeline
 
-As input the pipeline requires names of the sequence file and the reference genome, and binning parameters.
+As input the pipeline requires names of the sequence file, the reference genome, and binning parameters.
 These variables are stored in [`config.yaml`](./config.yaml) and used as wildcards to create and link files with each other or as parameters for the binning.
 
 #### 2.1 Raw sequences
@@ -85,13 +86,13 @@ If the headers in the sequence file do not contain the date, you can add it to h
 
 #### 2.2 Reported cases data file
 
-To compare estimated population dynamics with reported active cases, include a table in the folder [`reported_cases`](./reported_cases). Also provide the following parameters in the corresponding config field, for example like this:
+To compare estimated population dynamics with reported active cases, include a table in the folder [`reported_cases`](./reported_cases). Also provide the following parameters in the corresponding config field like this:
 
   ```
   reported_cases: ["reported_cases.csv","\t","date","active_cases","%m/%d/%y"]
   ```
 
-where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, followed by date column name, active cases column name and a format the date is stored in.
+where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, date column name, active cases column name, and a format the date is stored in.
 
 #### 2.3 Reference consensus sequence
 Copy and paste the file path of reference/consensus sequence into the variable **consensus** of [`config.yaml`](./config.yaml).
@@ -117,8 +118,7 @@ If parameter **number_per_bin** is an empty list, a default mode with predefined
 
 ### 3. Run
 
-To run the pipeline, go to Snakemake directory (where the Snakefile is) and activate the conda environment you created in step 1.2. Then enter the following command to execute the pipeline:
-
+To run the pipeline, go to the pipeline directory (where the Snakefile is) and activate the conda environment you created in step 1.2. Then enter the following command to execute the pipeline:
 
 ```
 snakemake --use-conda --snakefile Snakefile --configfile path/to/config.yaml -j -d path/to/workdir
