@@ -3,7 +3,7 @@
 This pipeline was created as a simple tool to study the change of nucleotide diversity over time in a collection of sequences.
 
 ## Input
-As an input the pipeline requires a file containing sequences and a one with a reference consenus sequence.
+As an input the pipeline requires a file containing sequences and a file with a reference consenus sequence.
 
 For the sequences it is important that they contain a sequencing-, or better, sample-date. The date must have the format **%YYYY-%mm-%dd**
 and has to be either part of the sequence-name or provided in an additional tsv-file.
