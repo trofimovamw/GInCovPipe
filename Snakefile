@@ -15,7 +15,7 @@ report: "report/workflow.rst"
 
 rule all:
 	input:
-		"results/splines/out_interp.pdf"
+		"results/interpolation/out_interp.pdf"
 
 
 rule strip_whitespaces:
@@ -140,7 +140,7 @@ rule theta_estimates:
 	input:
 		"results/bins/list_of_binnings.tsv"
 	output:
-		"results/plots/table_merged_thetas_var_from_size.tsv"
+		"results/bins_results/table_merged_thetas_var_from_size.tsv"
 	params:
 		ref = config["consensus"],
 		cutoff = config["freq_cutoff"],
@@ -157,7 +157,7 @@ rule theta_estimates:
 if config["R0"]=='y':
 	rule interpolationR0:
 		input:
-			infile = "results/plots/table_merged_thetas_var_from_size.tsv"
+			infile = "results/bins_results/table_merged_thetas_var_from_size.tsv"
 		params:
 			rep_cases = config["reported_cases"][0],
 			table_delim = config["reported_cases"][1],
@@ -168,7 +168,7 @@ if config["R0"]=='y':
 		conda:
 			"env/env.yml"
 		output:
-			result = "results/splines/out_interp.pdf",
+			result = "results/interpolation/out_interp.pdf",
 			#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 		shell:
 			"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolationR0.R {input.infile} \
@@ -189,7 +189,7 @@ if config["R0"]=='n':
 		conda:
 			"env/env.yml"
 		output:
-			result = "results/splines/out_interp.pdf",
+			result = "results/interpolation/out_interp.pdf",
 			#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 		shell:
 			"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolation.R {input.infile} \
