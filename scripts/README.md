@@ -1,6 +1,6 @@
 # How to run the test simulations pipeline
 
-The testing pipeline can be executed using **call_evol_run.sh**. This is just an extended bash script that Maureen has implemented. To run it, set the working directory and results directory variables in the top of the file:
+The testing pipeline can be executed using **call_evol_run.sh**. This is bash script. To run it, set the working directory and results directory variables in the top of the file:
 
 ```
 WORK_DIR="path/to/working_dir"
