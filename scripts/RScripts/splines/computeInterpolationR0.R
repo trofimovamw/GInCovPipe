@@ -19,19 +19,20 @@ for(p in c("ggplot2", "mgcv","grid","gridExtra","MASS","R0","scales")) {
 
 #Read in arguments
 args = commandArgs(trailingOnly = TRUE)
-if(length(args) < 8) {
-  cat("\nCall the script with 4 arguments: estimatesFile reportedCasesFile delim dateColumName newCasesColumnName dateFormat label outputFile\n\n
+if(length(args) < 3) {
+  cat("\nCall the script with 3 base arguments and 5 optional arguments: estimatesFile label outputFile (reportedCasesFile delim dateColumName newCasesColumnName dateFormat )\n\n
 1. The estimates file contains a tab separated table with headers and has at least 3 columns: \n
-t value variance.\n\n
-2. The reported cases file contains a table with reported cases on each date. \n
-The separator and the column names can be chosen arbitrarily and are defined with the following parameters.\n\n
-3. Delim gives the delimiter in the reported cases table. \n\n
-4. The column name for the the date in the reported cases table. \n\n
-5. The column name for the the number of cases in the reported cases table. \n\n
-6. The format of the date, e.g. %Y-%m-%d. \n\n
-7. A label for the data set, e.g. a country or city.\n\n
-8. The output path. The output tables are written to the given directory,
-      which is created if it does not exist yet.\n")
+t value variance.\n
+2. A label for the data set, e.g. a country or city.\n
+3. The output path. The output tables are written to the given directory,
+      which is created if it does not exist yet.\n\n
+Optionally: \n
+4. The reported cases file contains a table with reported cases on each date. \n
+The separator and the column names can be chosen arbitrarily and are defined with the following parameters.\n
+5. Delim gives the delimiter in the reported cases table. \n
+6. The column name for the the date in the reported cases table. \n
+7. The column name for the the number of cases in the reported cases table. \n
+8. The format of the date, e.g. %Y-%m-%d. \n\n")
   #terminate without saving workspace
   quit("no")
 }
@@ -40,19 +41,46 @@ cat(c("Arguments: ", args, "\n"), sep = "\n")
 
 # set the absolute paths
 inputFile<-normalizePath(args[1])
+print(inputFile)
+country = toString(args[2])
+print(country)
+outputFile<-file.path(args[3])
+print(outputFile)
+table_name = args[4]
+table_delim = args[5]
+table_date_col = args[6]
+table_active_col = args[7]
+table_date_format = args[8]
 
-#cases.list<- args[2]
-table_name = args[2]
-table_delim = args[3]
-table_date_col = args[4]
-table_active_col = args[5]
-table_date_format = args[6]
-country = toString(args[7])
-outputFile<-file.path(args[8])
+input_date_format = "%Y-%m-%d"
+cases.table.full = data.frame(matrix(ncol=0,nrow=0))
+minDates <- c()
+if (!is.na(table_name)) {
+  cases.table.full = read.table(normalizePath(table_name), header=T, sep=table_delim)
+  print(cases.table.full)
+  # change column names as they can be chosen flexibly, but we require date and new_cases
+  names(cases.table.full)[names(cases.table.full) == table_date_col] <- "date"
+  names(cases.table.full)[names(cases.table.full) == table_active_col] <- "new_cases"
+  minDate1 = min(as.Date(cases.table.full$date, table_date_format))
+  minDates <- c(minDates,minDate1)
+  cases.table.full$date <- as.Date(cases.table.full$date, table_date_format)
+  # Make cases table with t, new_cases, dates
+  cases.table <- data.frame(new_cases=cases.table.full$new_cases,date=cases.table.full$date)
+  if (!"new_cases" %in% colnames(cases.table)) {
+    cat("\n Reported cases table has no column named 'new_cases'. Rename existing columns
+                or provide a new table\n")
+    #terminate without saving workspace
+    quit("no")}
+  cases.table$new_cases[cases.table$new_cases<0] <- 0
+  cases.table$new_cases[is.na(cases.table$new_cases)] <- 0
+  cases.table$new_cases_avrg <- filter(cases.table$new_cases, rep(1/7,7))
+  cases.table <- na.omit(cases.table)
+  cases.table$country <- rep(country,nrow(cases.table))
 
-cases.table.full = read.table(normalizePath(table_name), header=T, sep=table_delim)
+  cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
+}
 input.table = read.table(inputFile, header=T, sep = "\t")
-
+print(input.table)
 # Define output file and output directory
 fileName<-basename(outputFile)
 outputDir<- dirname(outputFile)
@@ -87,19 +115,12 @@ source("splineRoutines.r")
 source("plotRoutines.r")
 source("dateFormatRoutines.r")
 
-# change column names as they can be chosen flexibly, but we require date and new_cases
-names(cases.table.full)[names(cases.table.full) == table_date_col] <- "date"
-names(cases.table.full)[names(cases.table.full) == table_active_col] <- "new_cases"
-
 #change date format to yyy-mm-dd
 # minDate to use in all plotted tables
-minDate1 = min(as.Date(cases.table.full$date, table_date_format))
-minDate2 = min(as.Date(input.table$meanBinDate, table_date_format))
-minDate = min(c(minDate1,minDate2))
-cases.table.full$date <- as.Date(cases.table.full$date, table_date_format)
-
-# Make cases table with t, new_cases, dates
-cases.table <- data.frame(new_cases=cases.table.full$new_cases,date=cases.table.full$date)
+minDate2 = min(as.Date(input.table$meanBinDate),input_date_format)
+minDates <- c(minDates,minDate2)
+minDate = min(minDates)
+print(minDate2)
 
 # Compute the splines and dot sizes
 cat("--- Compute spline and interpolation ---\n\n")
@@ -116,26 +137,11 @@ input.table$pointSize <- pointSize
 
 # Replace negative number of new cases with 0 - happens if calculated from cumulative confirmed
 # cases count
-if (!"new_cases" %in% colnames(cases.table)) {
-  cat("\n Reported cases table has no column named 'new_cases'. Rename existing columns
-              or provide a new table\n")
-  #terminate without saving workspace
-  quit("no")}
-
-cases.table$new_cases[cases.table$new_cases<0] <- 0
-cases.table$new_cases[is.na(cases.table$new_cases)] <- 0
-cases.table$new_cases_avrg <- filter(cases.table$new_cases, rep(1/7,7))
-cases.table <- na.omit(cases.table)
-cases.table$country <- rep(country,nrow(cases.table))
-
-cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
-
-### TODO: decide for which/how many time points the smoothing should be calculated and exchange
-### or add to the spline table (depending if you want to keep both for the evaluation)
-
+print(seq(min(input.table$t), max(input.table$t)))
 interp.table <-  computeInterpolation(input.table, seq(min(input.table$t), max(input.table$t)), input.table$sampleSize)
 # Plot interpolated curve with 95% CI starting on global minDate
 interp.table["date"] = days.as.Date(interp.table$t, minDate)
+print(interp.table["date"])
 #interp.table <- interp.table[!is.na(interp.table$median) ,]
 interp.table[is.na(interp.table)] = 0
 # Remove rows with zeros in smooth median

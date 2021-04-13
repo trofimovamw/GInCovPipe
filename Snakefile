@@ -144,7 +144,6 @@ rule theta_estimates:
 	params:
 		ref = config["consensus"],
 		cutoff = config["freq_cutoff"],
-		rep_cases = config["reported_cases"],
 		min_bin_size = config["min_bin_size"],
 		min_days_span = config["min_days_span"],
 		max_days_span = config["max_days_span"],
@@ -172,8 +171,8 @@ if config["R0"]=='y':
 			#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 		shell:
 			"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolationR0.R {input.infile} \
-			{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
-			{params.date_format} {params.group} {output.result}"
+			{params.group} {output.result} {params.rep_cases} {params.table_delim} \
+			{params.date_col} {params.cases_col} {params.date_format}"
 
 if config["R0"]=='n':
 	rule interpolation:
@@ -190,8 +189,7 @@ if config["R0"]=='n':
 			"env/env.yml"
 		output:
 			result = "results/interpolation/out_interp.pdf",
-			#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 		shell:
-			"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolation.R {input.infile} \
-			{params.rep_cases} '{params.table_delim}' {params.date_col} {params.cases_col} \
-			{params.date_format} {params.group} {output.result}"
+			"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolation.R {input.infile}\
+			{params.group} {output.result} {params.rep_cases} {params.table_delim}\
+			{params.date_col} {params.cases_col} {params.date_format}"
