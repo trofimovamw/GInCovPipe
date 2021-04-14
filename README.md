@@ -94,6 +94,12 @@ To compare estimated population dynamics with reported active cases, include a t
 
 where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, date column name, active cases column name, and a format the date is stored in.
 
+If no reported cases data is provided, leave the fields empty like this:
+
+  ```
+  reported_cases: ["","","","",""]
+  ```
+
 #### 2.3 Reference consensus sequence
 Copy and paste the file path of reference/consensus sequence into the variable **consensus** of [`config.yaml`](./config.yaml).
 
@@ -115,6 +121,20 @@ max_days_span: 21
 ```
 
 If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (2%, 5%, 7%) is used.
+
+#### 2.5 Reproduction number prediction
+
+The workflow can calculate and plot the prediction of effective reproduction number. If this prediction is desired, specify it in the configuration file:
+
+```
+R0: 'y'
+```
+
+If no prediction is wanted, specify it in the configuration file like this:
+
+```
+R0: 'n'
+```
 
 ### 3. Run
 
