@@ -453,8 +453,10 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
   maxY <- max(interp.table$smoothMedian)+0.5*max(interp.table$smoothMedian)
   ylimMax <- max(cases.table$new_cases_avrg)
   # Min/Max dates
-  xlimMax = min(max(days.as.Date(interp.table$t, minDate)),max(days.as.Date(cases.table$t, minDate)))
-  xlimMin = max(min(days.as.Date(interp.table$t, minDate)),min(days.as.Date(cases.table$t, minDate)))
+  #xlimMax = min(max(days.as.Date(interp.table$t, minDate)),max(days.as.Date(cases.table$t, minDate)))
+  #xlimMin = max(min(days.as.Date(interp.table$t, minDate)),min(days.as.Date(cases.table$t, minDate)))
+  xlimMin = min(days.as.Date(interp.table$t, minDate))
+  xlimMax = max(days.as.Date(interp.table$t, minDate))
   mycolors <- c("estid"="dodgerblue4", "trued"="darkred","esti"="dodgerblue4", "true"="red")
   p_spline_esti_realN <- ggplot() +
     #geom_histogram(data=meta.table, aes(x=days.as.Date(meta.table$t, minDate),y=..density..), fill="black", alpha=0.2, bins=round(nrow(input.table)/7)) +
@@ -678,7 +680,7 @@ plotR0BEAST <- function(input.table,daily.input.table,outputFile,minDate,group) 
     #geom_line(data=input.table,aes(x=period,y=beast.upper),colour=colours["beast"],size=2,linetype="dashed") +
     #geom_ribbon(data=input.table,aes(ymin=beast.lower, ymax=beast.upper, x=as.Date(date)), fill = "springgreen4", alpha = 0.2) +
     #geom_ribbon(data=input.table,aes(ymin=est.lower, ymax=est.upper, x=as.Date(date)), fill = "dodgerblue4", alpha = 0.2) +
-    ylab(expression(R[0])) +
+    ylab(expression(R[e])) +
     labs(title=paste(group)) +
     scale_colour_manual(name="",values=c("dodgerblue4","springgreen4"),labels = c(expression(theta[est]), "BEAST")) +
     xlab("") +
