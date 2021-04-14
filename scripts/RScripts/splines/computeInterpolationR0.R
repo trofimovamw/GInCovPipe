@@ -42,11 +42,8 @@ cat(c("Arguments: ", args, "\n"), sep = "\n")
 
 # set the absolute paths
 inputFile<-normalizePath(args[1])
-print(inputFile)
 country = toString(args[2])
-print(country)
 outputFile<-file.path(args[3])
-print(outputFile)
 r0 = args[4]
 table_name = args[5]
 table_delim = args[6]
@@ -121,12 +118,9 @@ if (!is.na(table_name)) {
 minDate2 = min(as.Date(input.table$meanBinDate,input_date_format))
 minDates <- c(minDate1,minDate2)
 minDate = min(minDates)
-print("minDate")
-print(minDate)
 # Compute the splines and dot sizes
-cat("--- Compute spline and interpolation ---\n\n")
+cat("--- Compute interpolation ---\n\n")
 input.table$t <- as.days_since_global_d0(input.table$meanBinDate,minDate)
-print("h")
 if (!is.na(table_name)) {cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)}
 pointSize <- c()
 for (i in (1:nrow(input.table))) {
@@ -140,11 +134,9 @@ input.table$pointSize <- pointSize
 
 # Replace negative number of new cases with 0 - happens if calculated from cumulative confirmed
 # cases count
-print(seq(min(input.table$t), max(input.table$t)))
 interp.table <-  computeInterpolation(input.table, seq(min(input.table$t), max(input.table$t)), input.table$sampleSize)
 # Plot interpolated curve with 95% CI starting on global minDate
 interp.table["date"] = days.as.Date(interp.table$t, minDate)
-print(interp.table["date"])
 #interp.table <- interp.table[!is.na(interp.table$median) ,]
 interp.table[is.na(interp.table)] = 0
 # Remove rows with zeros in smooth median
@@ -163,6 +155,7 @@ write.csv(input.table,paste0(outputDir,"/theta_",country,".csv"), row.names = F)
 # Wallinga and Teunis (2004)
 # Generation intervals distribution - gamma with mean = 5, sd = 1.9
 if (r0=='y') {
+  cat("--- Compute R0 ---\n\n")
   GT <- generation.time(type = "gamma",
                         val = c(5,1.9), truncate = NULL, step = 1, first.half = TRUE,
                         p0 = TRUE)
