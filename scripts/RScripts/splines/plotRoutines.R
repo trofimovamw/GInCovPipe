@@ -665,9 +665,8 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
     }
 
 
-plotR0BEAST <- function(input.table,daily.input.table,outputFile,minDate,group) {
+plotR0BEAST <- function(input.table,daily.input.table,outputFile,minDateS,minDate,group) {
   maxDate <- max(as.Date(daily.input.table$date))
-  print(maxDate)
   colours = c("esti"="dodgerblue4","beast"="springgreen4")
   plot <- ggplot() +
     geom_hline(yintercept=1,colour="darkgray",linetype="dashed",alpha=0.5,size=2) +
@@ -675,7 +674,7 @@ plotR0BEAST <- function(input.table,daily.input.table,outputFile,minDate,group) 
     #geom_line(data=input.table,aes(x=period,y=est.lower),colour=colours["esti"],size=2,linetype="dashed") +
     #geom_line(data=input.table,aes(x=period,y=est.upper),colour=colours["esti"],size=2,linetype="dashed") +
     geom_step(data=input.table,aes(x=as.Date(date),y=beast.median,colour="springgreen4"),alpha=0.7,size=3.5) +
-    geom_point(data=daily.input.table,aes(x=days.as.Date(daily.input.table$t, minDate),y=value),alpha=0.6,colour="dodgerblue4",size=3.5) +
+    geom_point(data=daily.input.table,aes(x=days.as.Date(daily.input.table$t, minDateS),y=value),alpha=0.6,colour="dodgerblue4",size=3.5) +
     #geom_line(data=input.table,aes(x=period,y=beast.lower),colour=colours["beast"],size=2,linetype="dashed") +
     #geom_line(data=input.table,aes(x=period,y=beast.upper),colour=colours["beast"],size=2,linetype="dashed") +
     #geom_ribbon(data=input.table,aes(ymin=beast.lower, ymax=beast.upper, x=as.Date(date)), fill = "springgreen4", alpha = 0.2) +
@@ -684,8 +683,10 @@ plotR0BEAST <- function(input.table,daily.input.table,outputFile,minDate,group) 
     labs(title=paste(group)) +
     scale_colour_manual(name="",values=c("dodgerblue4","springgreen4"),labels = c(expression(theta[est]), "BEAST")) +
     xlab("") +
+    ylim(0,3) +
+    #ylim(0,2*max(max(input.table$est.median),max(input.table$beast.median))) +
     scale_x_date(date_breaks = "1 months", date_minor_breaks="2 weeks" , date_labels = "%b %Y",
-      limits = as.Date(c(minDate,maxDate))) +
+      limits = as.Date(c(min(as.Date(input.table$date)),maxDate))) +
     theme(
       axis.text.x=element_text(size=24, angle = 45, vjust = 1, hjust=1),
       axis.text.y=element_text(size=26),

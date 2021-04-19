@@ -208,21 +208,16 @@ plotR0Package(tdc.table,"WT04",outputFileWT)
 interp.table$smoothMedian <- interp.table$smoothMedian+1
 td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT,t=days.as.Date(interp.table$t, minDate))
 tdc.minDate <- td$begin
-print(interp.table)
-print(tdc.minDate)
-print(minDate)
-print(minDate1)
-print(minDate2)
-td.table <- data.frame(t=interp.table[1:length(td$R),]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
+td.table <- data.frame(t=interp.table[td$begin.nb:td$end.nb,]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
 outputFileWT <- paste0(normalizePath(outputDir),"/","wt04_",fileName)
 plotR0Package(td.table,"WT04",outputFileWT)
 
 # Bin the values - R0s
 values.vec <- c()
 #Switzerland
-#border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-06-15","2020-08-20","2020-10-19","2021-03-30"))
+#border.dates <- as.Date(c("2020-02-24","2020-03-16","2020-05-11","2020-06-15","2020-08-20","2020-10-19","2021-03-30"))
 #Victoria
-border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-07-19","2020-09-13"))#,"2020-10-26","2021-03-30"))
+border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-07-19","2020-09-13"))
 #Denmark
 #border.dates <- as.Date(c("2020-03-02","2020-03-18","2020-04-28","2020-06-15","2020-08-22","2020-10-26","2020-12-16","2021-02-09"))
 # Scotland
@@ -238,17 +233,12 @@ for (i in (1:nrow(td.table))){
     }
   }
 }
-print("Here")
 td.table$group <- values.vec
-print("Here")
 #mean.tdc.table <- aggregate(tdc.table$value, list(tdc.table$group), FUN = 'quantile', probs = 0.05)
 td.table.95 <- ddply(td.table, "group", summarise, WQ95 = quantile(value, .95))
-print("Here")
 td.table.5 <- ddply(td.table, "group", summarise, WQ50 = quantile(value, .5))
-print("Here")
 td.table.05 <- ddply(td.table, "group", summarise, WQ05 = quantile(value, .05))
 #
-print("Here")
 beast.table <- read.table(args[9], header =T, sep=" ", as.is=T, quote = "\"",allowEscapes=TRUE)
 beast.table.95 <- ddply(beast.table, "interval", summarise, WQ95 = quantile(R, .95))
 beast.table.5 <- ddply(beast.table, "interval", summarise, WQ50 = quantile(R, .5))
@@ -260,6 +250,10 @@ rzero.table <- data.frame(period=td.table.5$group,est.median=td.table.5$WQ50,
                           beast.lower=beast.table.05$WQ05, beast.upper=beast.table.95$WQ95)
 rzero.table <- rbind(rzero.table, rzero.table[nrow(rzero.table),])
 rzero.table$date[nrow(rzero.table)] <- max(td.table$date)
-print(rzero.table)
+# Full R0
 outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_",fileName)
-plotR0BEAST(rzero.table,td.table,outputFileR0,minDate,country)
+plotR0BEAST(rzero.table,td.table,outputFileR0,minDate,minDate,country)
+# Crop first bin R0
+outputFileR0Crop = paste0(normalizePath(outputDir),"/","rzero_beast_cropfirst_",fileName)
+minDatec <- min(as.Date(rzero.table$date))
+plotR0BEAST(rzero.table[2:nrow(rzero.table),],td.table,outputFileR0Crop,minDate,minDatec,country)
