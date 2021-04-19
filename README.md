@@ -1,4 +1,4 @@
-# nCovPopDyn pipeline
+# *G*enome-based *In*cidence Estimation of *Cov*id-19 *Pipe*line
 
 This pipeline was created as a simple tool to study the change of nucleotide diversity over time in a collection of sequences.
 
@@ -52,13 +52,13 @@ Conda will manage the dependencies of our pipeline. Instructions can be found he
 Create a new environment where the pipeline will be executed, for example like this:
 
 ```
-conda create --name ncov_pipeline
+conda create --name GInCovPipe
 ```
 
 Then to activate this environment, type:
 
 ```
-conda activate ncov_pipeline
+conda activate GInCovPipe
 ```
 
 #### 1.3 Install Snakemake
