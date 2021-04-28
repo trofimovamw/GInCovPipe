@@ -80,7 +80,7 @@ conda install snakemake
 ### 2. Initialize the pipeline
 
 As input the pipeline requires names of the sequence file, the reference genome, and binning parameters.
-These variables are stored in [`config.yaml`](./config.yaml) and used as wildcards to create and link files with each other or as parameters for the binning.
+These variables are stored in [`config.yaml`](./config.yaml) and used as wildcards to create and link files with each other or as parameters for the binning. For more information about the YAML markup format refer to documentation: https://yaml.org
 
 #### 2.1 Raw sequences
 The pipeline requires a file containing sequences, with the date in the sequence-name in GISAID format (date in format "%Y-%m-%d" at the end of header after a vertical bar).
@@ -118,7 +118,7 @@ Copy and paste the file path of reference/consensus sequence into the variable *
 #### 2.4 Binning parameters
 You also have to set the parameters for some of the binning methods in [`config.yaml`](./config.yaml).
 You can set the number of sequences per bin, and the number of days.
-Parameters should be given as a list. Additionally, minimal bin size and maximal days span should be
+Parameters can be given as an array. Additionally, minimal bin size and maximal days span should be
 provided.
 
 ```
@@ -128,7 +128,13 @@ min_bin_size: 15
 max_days_span: 21
 ```
 
-If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (2%, 5%, 7%) is used.
+If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (2%, 5%, 7%) is used. ALternatively, all arrays can be given in the configuration file as a list, like this:
+
+```
+number_per_bin: 
+    - 20
+    - 30
+```
 
 #### 2.5 Reproduction number prediction
 
