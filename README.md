@@ -14,7 +14,6 @@ and has to be either part of the sequence-name or provided in an additional tsv-
 The pipeline creates a folder **'results'**, containing all (intermediate) outputs, with the following structure:
 ```
     ├── results                                 # Main results folder
-    │   ├── analysis                            # Nucleotide diversity plots and table
     │   ├── bam                                 # sorted and indexed bam files
     │   ├── bins                                # binning results
     │       ├── cal_week                        # binned by calendar week
@@ -27,6 +26,7 @@ The pipeline creates a folder **'results'**, containing all (intermediate) outpu
     |               ├── range_*.tsv             # range of dates of the corresponding bin
     |               ├── list_of_files.tsv       # list of file names in the binning mode
     │   ├── bins_results                        # Individual binning results plots (and tables)
+    │   ├── meta                                # Meta information about all used sequences (name and collection date)
     │   ├── interpolation                       # Plots and tables for final interpolated trajectory
     |       ├── interpolation.csv               # table with interpolated population size estimates
     │       ├── estimates.csv                   # table wih raw population size estimates                       
