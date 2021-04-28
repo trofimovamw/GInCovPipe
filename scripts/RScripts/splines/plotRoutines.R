@@ -493,21 +493,21 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
       panel.background = element_blank(), axis.line = element_line(colour = "black")
     )
     p_spline_esti_realN2 <- p_spline_esti_realN
-    if(nrow(measure_country.table) != 0) {
-      ypos = maxY
-      #interp.table$date <- days.as.Date(interp.table$t, minDate)
-      # Get value of interpolation to place label just above
-      measure_country.table$date <- as.Date(measure_country.table$date)
-      interp.table$date <- as.Date(interp.table$date)
-      merged.table <- merge(measure_country.table, interp.table, by.x="date", by.y="date")
-      merged.table$ypos <- merged.table$smooth95+merged.table$smooth95
-      #ypos = max(layer_scales(p_spline_esti_realN)[["y"]][["range"]][["range"]])
-      p_spline_esti_realN2 <- p_spline_esti_realN2 +
-        geom_vline(xintercept = as.Date(merged.table$date), linetype="dashed", color = "black") +
-        geom_shadowtext(aes(x = as.Date(merged.table$date), y = ypos),
-          label = paste0(merged.table$dateStr, "\n", merged.table$measure),lineheight=0.7,nudge_x=-2, nudge_y=-10,
-          angle=90, vjust=0.6, hjust="right", colour="black", bg.colour="white", fontface = "bold", size = 6)
-    }
+    # if(nrow(measure_country.table) != 0) {
+    #   ypos = maxY
+    #   #interp.table$date <- days.as.Date(interp.table$t, minDate)
+    #   # Get value of interpolation to place label just above
+    #   measure_country.table$date <- as.Date(measure_country.table$date)
+    #   interp.table$date <- as.Date(interp.table$date)
+    #   merged.table <- merge(measure_country.table, interp.table, by.x="date", by.y="date")
+    #   merged.table$ypos <- merged.table$smooth95+merged.table$smooth95
+    #   #ypos = max(layer_scales(p_spline_esti_realN)[["y"]][["range"]][["range"]])
+    #   p_spline_esti_realN2 <- p_spline_esti_realN2 +
+    #     geom_vline(xintercept = as.Date(merged.table$date), linetype="dashed", color = "black") +
+    #     geom_shadowtext(aes(x = as.Date(merged.table$date), y = ypos),
+    #       label = paste0(merged.table$dateStr, "\n", merged.table$measure),lineheight=0.7,nudge_x=-2, nudge_y=-10,
+    #       angle=90, vjust=0.6, hjust="right", colour="black", bg.colour="white", fontface = "bold", size = 6)
+    # }
 
     ggsave(p_spline_esti_realN2,
              height = 8,
@@ -534,21 +534,21 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
            panel.border = element_rect(colour = "black", fill=NA, size=1.5),
            panel.background = element_blank(), axis.line = element_line(colour = "black")
          )
-         if(nrow(measure_country.table) != 0) {
-           ypos = maxY
-           #interp.table$date <- days.as.Date(interp.table$t, minDate)
-           # Get value of interpolation to place label just above
-           measure_country.table$date <- as.Date(measure_country.table$date)
-           interp.table$date <- as.Date(interp.table$date)
-           merged.table <- merge(measure_country.table, interp.table, by.x="date", by.y="date")
-           merged.table$ypos <- merged.table$smooth95+merged.table$smooth95
-           #ypos = max(layer_scales(p_spline_esti_realN)[["y"]][["range"]][["range"]])
-           p_spline_esti_realN <- p_spline_esti_realN +
-             geom_vline(xintercept = as.Date(merged.table$date), linetype="dashed", color = "black") +
-             geom_shadowtext(aes(x = as.Date(merged.table$date), y = ypos),
-               label = paste0(merged.table$dateStr, "\n", merged.table$measure),lineheight=0.7, nudge_x=-2, nudge_y=-10,
-               angle=90, vjust=0.6, hjust="right", colour="black", bg.colour="white", fontface = "bold", size = 5.5)
-         }
+         # if(nrow(measure_country.table) != 0) {
+         #   ypos = maxY
+         #   #interp.table$date <- days.as.Date(interp.table$t, minDate)
+         #   # Get value of interpolation to place label just above
+         #   measure_country.table$date <- as.Date(measure_country.table$date)
+         #   interp.table$date <- as.Date(interp.table$date)
+         #   merged.table <- merge(measure_country.table, interp.table, by.x="date", by.y="date")
+         #   merged.table$ypos <- merged.table$smooth95+merged.table$smooth95
+         #   #ypos = max(layer_scales(p_spline_esti_realN)[["y"]][["range"]][["range"]])
+         #   p_spline_esti_realN <- p_spline_esti_realN +
+         #     geom_vline(xintercept = as.Date(merged.table$date), linetype="dashed", color = "black") +
+         #     geom_shadowtext(aes(x = as.Date(merged.table$date), y = ypos),
+         #       label = paste0(merged.table$dateStr, "\n", merged.table$measure),lineheight=0.7, nudge_x=-2, nudge_y=-10,
+         #       angle=90, vjust=0.6, hjust="right", colour="black", bg.colour="white", fontface = "bold", size = 5.5)
+         # }
     ggsave(p_spline_esti_realN,
              height = 8,
              width = 10,
@@ -666,24 +666,29 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.table,m
 
 
 plotR0BEAST <- function(input.table,daily.input.table,outputFile,minDateS,minDate,group) {
+  for(p in c("pammtools")) {
+    dynamic_require(p)
+  }
   maxDate <- max(as.Date(daily.input.table$date))
   colours = c("esti"="dodgerblue4","beast"="springgreen4")
   plot <- ggplot() +
     geom_hline(yintercept=1,colour="darkgray",linetype="dashed",alpha=0.5,size=2) +
+    geom_stepribbon(data=input.table,aes(x=as.Date(date),ymin = est.lower, ymax = est.upper), fill = colours["esti"],alpha=0.3) +
+    geom_stepribbon(data=input.table,aes(x=as.Date(date),ymin = beast.lower, ymax = beast.upper), fill = colours["beast"],alpha=0.3) +
     geom_step(data=input.table,aes(x=as.Date(date),y=est.median,colour="dodgerblue4"),alpha=0.7,size=3.5) +
-    #geom_line(data=input.table,aes(x=period,y=est.lower),colour=colours["esti"],size=2,linetype="dashed") +
-    #geom_line(data=input.table,aes(x=period,y=est.upper),colour=colours["esti"],size=2,linetype="dashed") +
+    geom_step(data=input.table,aes(x=as.Date(date),y=est.lower),colour=colours["esti"],size=0.5,linetype="dashed") +
+    geom_step(data=input.table,aes(x=as.Date(date),y=est.upper),colour=colours["esti"],size=0.5,linetype="dashed") +
     geom_step(data=input.table,aes(x=as.Date(date),y=beast.median,colour="springgreen4"),alpha=0.7,size=3.5) +
     geom_point(data=daily.input.table,aes(x=days.as.Date(daily.input.table$t, minDateS),y=value),alpha=0.6,colour="dodgerblue4",size=3.5) +
-    #geom_line(data=input.table,aes(x=period,y=beast.lower),colour=colours["beast"],size=2,linetype="dashed") +
-    #geom_line(data=input.table,aes(x=period,y=beast.upper),colour=colours["beast"],size=2,linetype="dashed") +
+    geom_step(data=input.table,aes(x=as.Date(date),y=beast.lower),colour=colours["beast"],size=0.5,linetype="dashed") +
+    geom_step(data=input.table,aes(x=as.Date(date),y=beast.upper),colour=colours["beast"],size=0.5,linetype="dashed") +
     #geom_ribbon(data=input.table,aes(ymin=beast.lower, ymax=beast.upper, x=as.Date(date)), fill = "springgreen4", alpha = 0.2) +
     #geom_ribbon(data=input.table,aes(ymin=est.lower, ymax=est.upper, x=as.Date(date)), fill = "dodgerblue4", alpha = 0.2) +
     ylab(expression(R[e])) +
     labs(title=paste(group)) +
     scale_colour_manual(name="",values=c("dodgerblue4","springgreen4"),labels = c(expression(theta[est]), "BEAST")) +
     xlab("") +
-    ylim(0,3) +
+    ylim(0,2.5) +
     #ylim(0,2*max(max(input.table$est.median),max(input.table$beast.median))) +
     scale_x_date(date_breaks = "1 months", date_minor_breaks="2 weeks" , date_labels = "%b %Y",
       limits = as.Date(c(min(as.Date(input.table$date)),maxDate))) +

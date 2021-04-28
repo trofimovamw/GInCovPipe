@@ -15,7 +15,7 @@ report: "report/workflow.rst"
 
 rule all:
 	input:
-		"results/splines/out_spline.png"
+		"results/splines/rep_cases_interp_out_spline.png"
 
 
 rule strip_whitespaces:
@@ -166,7 +166,7 @@ rule splines:
 		group = config["group"],
 		beast = config["beast"]
 	output:
-		result = "results/splines/out_spline.png",
+		result = "results/splines/rep_cases_interp_out_spline.png",
 		#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 	shell:
 		"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeSpline.R {input.infile} \

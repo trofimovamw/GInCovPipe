@@ -84,8 +84,6 @@ if (rstudioapi::isAvailable()) {
 }
 setwd(this.dir)
 
-remotes::install_github("wilkelab/ggtext")
-library(ggtext)
 
 # load other r routines
 source("splineRoutines.r")
@@ -99,7 +97,9 @@ names(cases.table.full)[names(cases.table.full) == table_active_col] <- "new_cas
 #change date format to yyy-mm-dd
 # minDate to use in all plotted tables
 minDate1 = min(as.Date(cases.table.full$date, table_date_format))
-minDate2 = min(as.Date(input.table$meanBinDate, table_date_format))
+print(minDate1)
+minDate2 = min(as.Date(input.table$meanBinDate, "%Y-%m-%d"))
+print(minDate2)
 minDate = min(c(minDate1,minDate2))
 cases.table.full$date <- as.Date(cases.table.full$date, table_date_format)
 meta.table$Collection_date <- as.Date(meta.table$Collection_date, table_date_format)
@@ -110,6 +110,7 @@ cases.table <- data.frame(new_cases=cases.table.full$new_cases,
 
 # Compute the splines and dot sizes
 cat("--- Compute interpolation ---\n\n")
+print(minDate)
 input.table$t <- as.days_since_global_d0(input.table$meanBinDate,minDate)
 meta.table$t <- as.days_since_global_d0(meta.table$Collection_date,minDate)
 
@@ -123,7 +124,7 @@ for (i in (1:nrow(input.table))) {
 }
 input.table$pointSize <- pointSize
 
-spline.table <- computeSplineTable(input.table)
+#spline.table <- computeSplineTable(input.table)
 
 # Replace negative number of new cases with 0 - happens if calculated from cumulative confirmed
 # cases count
@@ -141,8 +142,9 @@ cases.table$country <- rep(country,nrow(cases.table))
 
 cases.table$t <- as.days_since_global_d0(cases.table$date,minDate)
 
-cases.spline.table <- computeSplineNewCasesTable(cases.table)
-
+#cases.spline.table <- computeSplineNewCasesTable(cases.table)
+print(input.table$t)
+print(max(input.table$t))
 interp.table <-  computeInterpolation(input.table, seq(min(input.table$t), max(input.table$t)), input.table$sampleSize)
 # Plot interpolated curve with 95% CI starting on global minDate
 interp.table["date"] = days.as.Date(interp.table$t, minDate)
@@ -161,8 +163,8 @@ plotInterpolationWithNewCases(cases.table, interp.table, input.table, meta.table
 
 # Plot spline with daily new cases data - no negative values
 # With global minDate
-outputFileRC<-paste0(normalizePath(outputDir),"/","rep_cases_",fileName)
-plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, minDate)
+#outputFileRC<-paste0(normalizePath(outputDir),"/","rep_cases_",fileName)
+#plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, minDate)
 
 #Write tables and plot
 # outputFileInter<-paste0(normalizePath(outputDir),"/rep_cases_interp_smoothed_",fileName)
@@ -173,24 +175,22 @@ plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, min
 # plotInterpolationWithNewCasesPer100K(cases.table, interp.table2, input.table, meta.table, minDate, outputFileInter, outputFileInterDots,measure.table[which(measure.table$country==country),],country)
 
 # Plot spline with daily new cases data - no negative values
-outputFileRC<-paste0(normalizePath(outputDir),"/","rep_cases_",fileName)
-plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, minDate)
+#outputFileRC<-paste0(normalizePath(outputDir),"/","rep_cases_",fileName)
+#plotSplineWithNewCases(cases.table, input.table, spline.table, outputFileRC, minDate)
 
 # Simple output spline plot
-plotSpline(input.table, spline.table, outputFile)
+#plotSpline(input.table, spline.table, outputFile)
 
-# Write spline table
-write.csv(spline.table,paste0(outputDir,"/spline_",country,".csv"), row.names = F)
 # Write reported cases table
 write.csv(cases.table,paste0(outputDir,"/cases_",country,".csv"), row.names = F)
-# Write reported cases spline table
-write.csv(cases.spline.table,paste0(outputDir,"/cases_spline_",country,".csv"), row.names = F)
 # Write estimated theta table
 write.csv(input.table,paste0(outputDir,"/theta_",country,".csv"), row.names = F)
 
 # Cases with pseudocount
 cases.table$new_cases_pseudo <- cases.table$new_cases_avrg+1
 
+###############################################################################################################
+#BEAST comparison 1
 # Generation time distribution
 GT <- generation.time(type = "gamma",
                       val = c(5,1.9), truncate = NULL, step = 1, first.half = TRUE,
@@ -200,8 +200,6 @@ tdc.table <- data.frame(t=cases.table[1:length(tdc$R),]$t,value=as.vector(tdc$R)
 outputFileWT <- paste0(normalizePath(outputDir),"/","cases_wt04_smooth_",fileName)
 plotR0Package(tdc.table,"WT04",outputFileWT)
 
-###############################################################################################################
-#BEAST comparison
 # R0 package
 # Wallinga and Teunis (2004)
 # Generation intervals distribution - lognormal with mean = 5, sd = 1.9
@@ -215,13 +213,13 @@ plotR0Package(td.table,"WT04",outputFileWT)
 # Bin the values - R0s
 values.vec <- c()
 #Switzerland
-#border.dates <- as.Date(c("2020-02-24","2020-03-16","2020-05-11","2020-06-15","2020-08-20","2020-10-19","2021-03-30"))
+#border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-06-15","2020-08-20","2020-10-19","2021-03-30"))
 #Victoria
 border.dates <- as.Date(c(toString(minDate),"2020-03-16","2020-05-11","2020-07-19","2020-09-13"))
 #Denmark
-#border.dates <- as.Date(c("2020-03-02","2020-03-18","2020-04-28","2020-06-15","2020-08-22","2020-10-26","2020-12-16","2021-02-09"))
+#border.dates <- as.Date(c(toString(minDate),"2020-03-18","2020-04-28","2020-06-15","2020-08-22","2020-10-26","2020-12-16","2021-02-09"))
 # Scotland
-#border.dates <- as.Date(c("2020-03-04","2020-03-24","2020-05-29","2020-07-15","2020-09-23","2020-11-17","2021-01-05","2021-02-02"))
+#border.dates <- as.Date(c(toString(minDate),"2020-03-24","2020-05-29","2020-07-15","2020-09-23","2020-11-17","2021-01-05","2021-02-02"))
 td.table$date <- days.as.Date(td.table$t, minDate)
 group.means <- c()
 # 16.03-11.05-15.06-20.08-19.10
@@ -234,11 +232,13 @@ for (i in (1:nrow(td.table))){
   }
 }
 td.table$group <- values.vec
+
 #mean.tdc.table <- aggregate(tdc.table$value, list(tdc.table$group), FUN = 'quantile', probs = 0.05)
 td.table.95 <- ddply(td.table, "group", summarise, WQ95 = quantile(value, .95))
 td.table.5 <- ddply(td.table, "group", summarise, WQ50 = quantile(value, .5))
 td.table.05 <- ddply(td.table, "group", summarise, WQ05 = quantile(value, .05))
 #
+
 beast.table <- read.table(args[9], header =T, sep=" ", as.is=T, quote = "\"",allowEscapes=TRUE)
 beast.table.95 <- ddply(beast.table, "interval", summarise, WQ95 = quantile(R, .95))
 beast.table.5 <- ddply(beast.table, "interval", summarise, WQ50 = quantile(R, .5))
@@ -248,12 +248,139 @@ rzero.table <- data.frame(period=td.table.5$group,est.median=td.table.5$WQ50,
                           est.lower=td.table.05$WQ05, est.upper=td.table.95$WQ95,
                           beast.median=beast.table.5$WQ50, date=border.dates[1:(length(border.dates)-1)],
                           beast.lower=beast.table.05$WQ05, beast.upper=beast.table.95$WQ95)
+
 rzero.table <- rbind(rzero.table, rzero.table[nrow(rzero.table),])
 rzero.table$date[nrow(rzero.table)] <- max(td.table$date)
 # Full R0
-outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_",fileName)
+outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_5_1.9_",fileName)
 plotR0BEAST(rzero.table,td.table,outputFileR0,minDate,minDate,country)
 # Crop first bin R0
-outputFileR0Crop = paste0(normalizePath(outputDir),"/","rzero_beast_cropfirst_",fileName)
+outputFileR0Crop = paste0(normalizePath(outputDir),"/","rzero_beast_cropfirst_5_1.9_",fileName)
+minDatec <- min(as.Date(rzero.table$date))
+plotR0BEAST(rzero.table[2:nrow(rzero.table),],td.table,outputFileR0Crop,minDate,minDatec,country)
+
+###############################################################################################################
+#BEAST comparison 2
+
+# Generation time distribution
+GT <- generation.time(type = "gamma",
+                      val = c(5,1.5), truncate = NULL, step = 1, first.half = TRUE,
+                      p0 = TRUE)
+tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_pseudo))),GT=GT,t=days.as.Date(cases.table$t, minDate))
+tdc.table <- data.frame(t=cases.table[1:length(tdc$R),]$t,value=as.vector(tdc$R),lower=as.vector(tdc$conf.int$lower),upper=as.vector(tdc$conf.int$upper))
+outputFileWT <- paste0(normalizePath(outputDir),"/","cases_wt04_smooth_",fileName)
+plotR0Package(tdc.table,"WT04",outputFileWT)
+
+# R0 package
+# Wallinga and Teunis (2004)
+# Generation intervals distribution - lognormal with mean = 5, sd = 1.9
+interp.table$smoothMedian <- interp.table$smoothMedian+1
+td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT,t=days.as.Date(interp.table$t, minDate))
+tdc.minDate <- td$begin
+td.table <- data.frame(t=interp.table[td$begin.nb:td$end.nb,]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
+outputFileWT <- paste0(normalizePath(outputDir),"/","wt04_",fileName)
+plotR0Package(td.table,"WT04",outputFileWT)
+
+# Bin the values - R0s
+values.vec <- c()
+
+td.table$date <- days.as.Date(td.table$t, minDate)
+group.means <- c()
+# 16.03-11.05-15.06-20.08-19.10
+for (i in (1:nrow(td.table))){
+  for (j in (2:length(border.dates))){
+    if ((td.table$date[i]>=border.dates[j-1]) & (td.table$date[i]<border.dates[j])){
+      values.vec <- c(values.vec,(j-1))
+      group.means <- c(group.means,(border.dates[j]-border.dates[j-1])/2)
+    }
+  }
+}
+td.table$group <- values.vec
+
+#mean.tdc.table <- aggregate(tdc.table$value, list(tdc.table$group), FUN = 'quantile', probs = 0.05)
+td.table.95 <- ddply(td.table, "group", summarise, WQ95 = quantile(value, .95))
+td.table.5 <- ddply(td.table, "group", summarise, WQ50 = quantile(value, .5))
+td.table.05 <- ddply(td.table, "group", summarise, WQ05 = quantile(value, .05))
+#
+
+beast.table <- read.table(args[9], header =T, sep=" ", as.is=T, quote = "\"",allowEscapes=TRUE)
+beast.table.95 <- ddply(beast.table, "interval", summarise, WQ95 = quantile(R, .95))
+beast.table.5 <- ddply(beast.table, "interval", summarise, WQ50 = quantile(R, .5))
+beast.table.05 <- ddply(beast.table, "interval", summarise, WQ05 = quantile(R, .05))
+
+rzero.table <- data.frame(period=td.table.5$group,est.median=td.table.5$WQ50,
+                          est.lower=td.table.05$WQ05, est.upper=td.table.95$WQ95,
+                          beast.median=beast.table.5$WQ50, date=border.dates[1:(length(border.dates)-1)],
+                          beast.lower=beast.table.05$WQ05, beast.upper=beast.table.95$WQ95)
+
+rzero.table <- rbind(rzero.table, rzero.table[nrow(rzero.table),])
+rzero.table$date[nrow(rzero.table)] <- max(td.table$date)
+# Full R0
+outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_5_1.5_",fileName)
+plotR0BEAST(rzero.table,td.table,outputFileR0,minDate,minDate,country)
+# Crop first bin R0
+outputFileR0Crop = paste0(normalizePath(outputDir),"/","rzero_beast_cropfirst_5_1.5_",fileName)
+minDatec <- min(as.Date(rzero.table$date))
+plotR0BEAST(rzero.table[2:nrow(rzero.table),],td.table,outputFileR0Crop,minDate,minDatec,country)
+
+###############################################################################################################
+#BEAST comparison 3
+# Generation time distribution
+GT <- generation.time(type = "gamma",
+                      val = c(5,1), truncate = NULL, step = 1, first.half = TRUE,
+                      p0 = TRUE)
+tdc <- est.R0.TD(as.numeric(unlist(round(cases.table$new_cases_pseudo))),GT=GT,t=days.as.Date(cases.table$t, minDate))
+tdc.table <- data.frame(t=cases.table[1:length(tdc$R),]$t,value=as.vector(tdc$R),lower=as.vector(tdc$conf.int$lower),upper=as.vector(tdc$conf.int$upper))
+outputFileWT <- paste0(normalizePath(outputDir),"/","cases_wt04_smooth_",fileName)
+plotR0Package(tdc.table,"WT04",outputFileWT)
+
+# R0 package
+# Wallinga and Teunis (2004)
+# Generation intervals distribution - lognormal with mean = 5, sd = 1.9
+interp.table$smoothMedian <- interp.table$smoothMedian+1
+td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT,t=days.as.Date(interp.table$t, minDate))
+tdc.minDate <- td$begin
+td.table <- data.frame(t=interp.table[td$begin.nb:td$end.nb,]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
+outputFileWT <- paste0(normalizePath(outputDir),"/","wt04_",fileName)
+plotR0Package(td.table,"WT04",outputFileWT)
+
+# Bin the values - R0s
+values.vec <- c()
+td.table$date <- days.as.Date(td.table$t, minDate)
+group.means <- c()
+# 16.03-11.05-15.06-20.08-19.10
+for (i in (1:nrow(td.table))){
+  for (j in (2:length(border.dates))){
+    if ((td.table$date[i]>=border.dates[j-1]) & (td.table$date[i]<border.dates[j])){
+      values.vec <- c(values.vec,(j-1))
+      group.means <- c(group.means,(border.dates[j]-border.dates[j-1])/2)
+    }
+  }
+}
+td.table$group <- values.vec
+
+#mean.tdc.table <- aggregate(tdc.table$value, list(tdc.table$group), FUN = 'quantile', probs = 0.05)
+td.table.95 <- ddply(td.table, "group", summarise, WQ95 = quantile(value, .95))
+td.table.5 <- ddply(td.table, "group", summarise, WQ50 = quantile(value, .5))
+td.table.05 <- ddply(td.table, "group", summarise, WQ05 = quantile(value, .05))
+#
+
+beast.table <- read.table(args[9], header =T, sep=" ", as.is=T, quote = "\"",allowEscapes=TRUE)
+beast.table.95 <- ddply(beast.table, "interval", summarise, WQ95 = quantile(R, .95))
+beast.table.5 <- ddply(beast.table, "interval", summarise, WQ50 = quantile(R, .5))
+beast.table.05 <- ddply(beast.table, "interval", summarise, WQ05 = quantile(R, .05))
+
+rzero.table <- data.frame(period=td.table.5$group,est.median=td.table.5$WQ50,
+                          est.lower=td.table.05$WQ05, est.upper=td.table.95$WQ95,
+                          beast.median=beast.table.5$WQ50, date=border.dates[1:(length(border.dates)-1)],
+                          beast.lower=beast.table.05$WQ05, beast.upper=beast.table.95$WQ95)
+
+rzero.table <- rbind(rzero.table, rzero.table[nrow(rzero.table),])
+rzero.table$date[nrow(rzero.table)] <- max(td.table$date)
+# Full R0
+outputFileR0 = paste0(normalizePath(outputDir),"/","rzero_beast_5_1_",fileName)
+plotR0BEAST(rzero.table,td.table,outputFileR0,minDate,minDate,country)
+# Crop first bin R0
+outputFileR0Crop = paste0(normalizePath(outputDir),"/","rzero_beast_cropfirst_5_1_",fileName)
 minDatec <- min(as.Date(rzero.table$date))
 plotR0BEAST(rzero.table[2:nrow(rzero.table),],td.table,outputFileR0Crop,minDate,minDatec,country)
