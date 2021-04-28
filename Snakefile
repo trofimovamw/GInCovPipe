@@ -7,8 +7,6 @@ import os
 
 report: "report/workflow.rst"
 
-configfile: "config.yaml"
-
 basefilename = os.path.basename(config["samples"])[:-6]
 
 report: "report/workflow.rst"
