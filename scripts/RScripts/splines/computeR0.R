@@ -76,7 +76,6 @@ input.table$smoothMedian <- input.table$smoothMedian+1
 td <- est.R0.TD(as.numeric(unlist(round(input.table$smoothMedian))),GT=GT,t=input.table$date)
 td.table <- data.frame(t=input.table[td$begin.nb:td$end.nb,]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
 # plot
-print(input.table[td$begin.nb:td$end.nb,]$date)
 td.table$date <- input.table[td$begin.nb:td$end.nb,]$date
 outputFileWT <- paste0(normalizePath(outputDir),"/",substr(fileName,1,(nchar(fileName)-4)),".pdf")
 plotR0Package(td.table,"WT04",outputFileWT)

@@ -13,14 +13,14 @@ basefilename = os.path.basename(config["samples"])[:-6]
 
 report: "report/workflow.rst"
 
-if config["R0"]=="n":
-	rule all:
-		input:
-			"results/interpolation/interpolation.csv"
-else:
+if config["R0"]:
 	rule all:
 		input:
 			"results/r0/r0.csv"
+else:
+	rule all:
+		input:
+			"results/interpolation/interpolation.csv"
 
 
 rule strip_whitespaces:
@@ -162,11 +162,7 @@ rule interpolation:
 	input:
 		infile = "results/bins_results/table_merged_thetas_var_from_size.tsv"
 	params:
-		rep_cases = config["reported_cases"][0],
-		table_delim = config["reported_cases"][1],
-		date_col = config["reported_cases"][2],
-		cases_col = config["reported_cases"][3],
-		date_format = config["reported_cases"][4],
+		rep_cases = config["reported_cases"],
 		group = config["group"]
 	conda:
 		"env/env.yml"
@@ -175,10 +171,9 @@ rule interpolation:
 		#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 	shell:
 		"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolation.R {input.infile} \
-		{params.group} {output.result} {params.rep_cases} {params.table_delim} \
-		{params.date_col} {params.cases_col} {params.date_format}"
+		{params.group} {output.result} {params.rep_cases}"
 
-if config["R0"]=="y":
+if config["R0"]:
 	rule r0:
 		input:
 			infile = "results/interpolation/interpolation.csv"

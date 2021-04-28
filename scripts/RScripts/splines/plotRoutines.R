@@ -99,7 +99,7 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.tables,
       #geom_point(aes(x = days.as.Date(meta.table$t, minDate), y = 0),colour="black",size=3,shape=1,alpha=0.1) +
       geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth95), size=1.3, colour=mycolors["esti"], alpha=0.55, linetype="dashed")+
       scale_y_continuous(
-        expression(paste(theta[est])),
+        expression(paste(phi[est])),
         sec.axis = sec_axis(~ . * 1/rel_vs_true_ratio, name = "Reported cases")) +
         #sec.axis = sec_axis(~ rescale(cases.table$new_cases_avrg, to=c(minY, maxY), from=range(cases.table$new_cases_avrg)), name = "Reported cases")) +
       xlab("")+
@@ -129,7 +129,7 @@ plotInterpolationWithNewCases <- function(cases.table,interp.table,input.tables,
       #geom_rug(data=meta.table, aes(x = days.as.Date(meta.table$t, minDate)), inherit.aes = F, alpha=0.05)+
       #geom_point(aes(x = days.as.Date(meta.table$t, minDate), y = 0),colour="black",size=3,shape=1,alpha=0.1) +
       geom_line(aes(x=days.as.Date(interp.table$t, minDate), y=interp.table$smooth95), size=1.3, colour=mycolors["esti"], alpha=0.55, linetype="dashed")+
-      scale_y_continuous(expression(paste(theta[est]))) +
+      scale_y_continuous(expression(paste(phi[est]))) +
       xlab("")+
       labs(title=country)+
       #coord_cartesian(xlim=c(minDate, maxDate),ylim=c(0,ylimMax)) +

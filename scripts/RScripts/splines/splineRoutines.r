@@ -221,13 +221,6 @@ computeInterpolation <- function (input.table, ts, weights=NULL) {
     #compute derivative
     interpol_smoothed_minusEpsilon<-approx(sub_value.table$t, sub_value.table$value, xout=ts)
     interpol_smoothed_plusEpsilon<-approx(sub_value.table$t, sub_value.table$value, xout=ts+eps)
-    # R0 here for each individual bootstrap
-    deriv <- (interpol_smoothed_plusEpsilon$y - interpol_smoothed_minusEpsilon$y)/(eps)
-    rzero <- exp(deriv)
-    devations <- rbind(devations, deriv)
-    rzeros <- rbind(rzeros, rzero)
-
-
     # samplings_minusEpsi <- rbind(samplings_minusEpsi, interpol_smoothed_minusEpsilon$y)
     # samplings_plusEpsi <- rbind(samplings_plusEpsi, interpol_smoothed_plusEpsilon$y)
   }
@@ -235,10 +228,6 @@ computeInterpolation <- function (input.table, ts, weights=NULL) {
   # taking the quantiles of all samplings
   quantiles <- apply(samplings, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
   smoothed_quantiles <- t(apply(quantiles, 1, filter, filter=rep(1,width)/width, sides=2))
-  quantiles_deriv <- apply(devations, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
-  smoothed_deviations <- t(apply(quantiles_deriv, 1, filter, filter=rep(1,width)/width, sides=2))
-  quantiles_rzeros <- apply(rzeros, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
-  smoothed_rzeros <- t(apply(quantiles_rzeros, 1, filter, filter=rep(1,width)/width, sides=2))
   # alternative solution: smooth the small intervals and calculate derivation afterwards
   # quantiles_plusEpsi <- apply(samplings_plusEpsi, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
   # quantiles_minusEpsi <- apply(samplings_minusEpsi, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
@@ -250,9 +239,7 @@ computeInterpolation <- function (input.table, ts, weights=NULL) {
   #quantiles_qs <- apply(qts, 2, quantile, c(0.05, 0.5, 0.95), na.rm=T)
   #smoothed_qts <- t(apply(quantiles_qts, 1, filter, filter=rep(1,width)/width, sides=2))
 
-  df <- data.frame(t=ts, smoothMedian=smoothed_quantiles[2,], smooth5=smoothed_quantiles[1,], smooth95=smoothed_quantiles[3,],
-                   derivativeMedian=smoothed_deviations[2,], derivative5=smoothed_deviations[1,], derivative95=smoothed_deviations[3,],
-                   rzeroMedian=smoothed_rzeros[2,], rzero5=smoothed_rzeros[1,], rzero95=smoothed_rzeros[3,])
+  df <- data.frame(t=ts, smoothMedian=smoothed_quantiles[2,], smooth5=smoothed_quantiles[1,], smooth95=smoothed_quantiles[3,])
                    #qtMedian=smoothed_qts[2,], qt5=smoothed_qts[1,], qt95=smoothed_qts[3,])
   return(df)
 }
