@@ -19,22 +19,22 @@ The pipeline creates a folder **'results'**, containing all (intermediate) outpu
     │       ├── cal_week                        # binned by calendar week
     │       ├── eq_days_10                      # binned by equal days                       
     │       ├── eq_size_100                     # binned by equal number of sequences
-    │       ├── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
+    │       └── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
     │               ├── bin_*.bam               # binned sequences as BAM
     │               ├── bin_*.bai               # index files                       
     │               ├── header_*.tsv            # header files (seq. name & date)
     |               ├── range_*.tsv             # range of dates of the corresponding bin
-    |               ├── list_of_files.tsv       # list of file names in the binning mode
+    |               └── list_of_files.tsv       # list of file names in the binning mode
     │   ├── bins_results                        # Individual binning results plots (and tables)
     │   ├── meta                                # Meta information about all used sequences (name and collection date)
     │   ├── interpolation                       # Plots and tables for final interpolated trajectory
     |       ├── interpolation.csv               # table with interpolated population size estimates
     │       ├── estimates.csv                   # table wih raw population size estimates                       
     │       ├── interpolation.pdf               # plot of interpolated population size
-    |       ├── wdots_interpolation.pdf         # plot of interpolated population size with dot size scaled by bin size
+    |       └── wdots_interpolation.pdf         # plot of interpolated population size with dot size scaled by bin size
     │   ├── r0                                  # Reproduction number estimate
     |       ├── r0.csv                          # table with daily reproduction number estimates
-    │       ├── r0.pdf                          # plot of daily reproduction number estimates                       
+    │       └── r0.pdf                          # plot of daily reproduction number estimates                       
     │   └── raw                                 # Preprocessed files
     │   
     └── ...
