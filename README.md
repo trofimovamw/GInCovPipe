@@ -22,11 +22,19 @@ The pipeline creates a folder **'results'**, containing all (intermediate) outpu
     │       ├── eq_size_100                     # binned by equal number of sequences
     │       ├── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
     │               ├── bin_*.bam               # binned sequences as BAM
-    │               ├── counts_*.tsv            # count matrix                       
+    │               ├── bin_*.bai               # index files                       
     │               ├── header_*.tsv            # header files (seq. name & date)
     |               ├── range_*.tsv             # range of dates of the corresponding bin
+    |               ├── list_of_files.tsv       # list of file names in the binning mode
     │   ├── bins_results                        # Individual binning results plots (and tables)
     │   ├── interpolation                       # Plots and tables for final interpolated trajectory
+    |       ├── interpolation.csv               # table with interpolated population size estimates
+    │       ├── estimates.csv                   # table wih raw population size estimates                       
+    │       ├── interpolation.pdf               # plot of interpolated population size
+    |       ├── wdots_interpolation.pdf         # plot of interpolated population size with dot size scaled by bin size
+    │   ├── r0                                  # Reproduction number estimate
+    |       ├── r0.csv                          # table with daily reproduction number estimates
+    │       ├── r0.pdf                          # plot of daily reproduction number estimates                       
     │   └── raw                                 # Preprocessed files
     │   
     └── ...
@@ -97,7 +105,7 @@ where the first element of the list is the file name with format extension, the 
 If no reported cases data is provided, leave the fields empty like this:
 
   ```
-  reported_cases: ["","","","",""]
+  reported_cases: []
   ```
 
 #### 2.3 Reference consensus sequence
@@ -124,17 +132,19 @@ If parameter **number_per_bin** is an empty list, a default mode with predefined
 
 #### 2.5 Reproduction number prediction
 
-The workflow can calculate and plot the prediction of effective reproduction number. If this prediction is desired, specify it in the configuration file:
+The workflow can calculate and plot the prediction of effective reproduction number. If this prediction is desired, specify it via a Boolean variable in the configuration file, for example like this:
 
 ```
-R0: 'y'
+R0: y
 ```
 
 If no prediction is wanted, specify it in the configuration file like this:
 
 ```
-R0: 'n'
+R0: n
 ```
+
+Other options for specifying this parameter also work. For examples see https://yaml.org/type/bool.html
 
 ### 3. Run
 
