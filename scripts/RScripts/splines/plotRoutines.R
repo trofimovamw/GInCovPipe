@@ -5,9 +5,9 @@ source("dateFormatRoutines.r")
 
 plotR0Package <- function(rzero.table,method,outputFile){
   p_interp_d1 <- ggplot() +
-    geom_line(aes(x=days.as.Date(rzero.table$t, minDate), y=rzero.table$value), colour="darkred", size=2, alpha=0.7)+
-    geom_line(aes(x=days.as.Date(rzero.table$t, minDate), y=rzero.table$lower), size=0.5, alpha=0.7, linetype="dashed")+
-    geom_line(aes(x=days.as.Date(rzero.table$t, minDate), y=rzero.table$upper), size=0.5, alpha=0.7, linetype="dashed")+
+    geom_line(aes(x=as.Date(rzero.table$date,"%Y-%m-%d"), y=rzero.table$value), colour="darkred", size=2, alpha=0.7)+
+    geom_line(aes(x=as.Date(rzero.table$date,"%Y-%m-%d"), y=rzero.table$lower), size=0.5, alpha=0.7, linetype="dashed")+
+    geom_line(aes(x=as.Date(rzero.table$date,"%Y-%m-%d"), y=rzero.table$upper), size=0.5, alpha=0.7, linetype="dashed")+
     #geom_point(aes(tt.df[,1], d1_gam), alpha=0.5, size=2) +
     #ylim(c(0,100))+
     xlab("") +

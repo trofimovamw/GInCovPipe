@@ -19,21 +19,20 @@ for(p in c("ggplot2", "mgcv","grid","gridExtra","MASS","R0","scales")) {
 
 #Read in arguments
 args = commandArgs(trailingOnly = TRUE)
-if(length(args) < 4) {
-  cat("\nCall the script with 4 base arguments and 5 optional arguments: estimatesFile label outputFile R0 (reportedCasesFile delim dateColumName newCasesColumnName dateFormat )\n\n
+if(length(args) < 3) {
+  cat("\nCall the script with 3 base arguments and 5 optional arguments: estimatesFile label outputFile R0 (reportedCasesFile delim dateColumName newCasesColumnName dateFormat )\n\n
 1. The estimates file contains a tab separated table with headers and has at least 3 columns: \n
 t value variance.\n
 2. A label for the data set, e.g. a country or city.\n
 3. The output path. The output tables are written to the given directory,
-      which is created if it does not exist yet.\n
-4. Compute R0 - 'y' or 'n'\n\n
+      which is created if it does not exist yet.\n\n
 Optionally: \n
-5. The reported cases file contains a table with reported cases on each date. \n
+4. The reported cases file contains a table with reported cases on each date. \n
 The separator and the column names can be chosen arbitrarily and are defined with the following parameters.\n
-6. Delim gives the delimiter in the reported cases table. \n
-7. The column name for the the date in the reported cases table. \n
-8. The column name for the the number of cases in the reported cases table. \n
-9. The format of the date, e.g. %Y-%m-%d. \n\n")
+5. Delim gives the delimiter in the reported cases table. \n
+6. The column name for the the date in the reported cases table. \n
+7. The column name for the the number of cases in the reported cases table. \n
+8. The date format in table.\n\n")
   #terminate without saving workspace
   quit("no")
 }
@@ -44,12 +43,11 @@ cat(c("Arguments: ", args, "\n"), sep = "\n")
 inputFile<-normalizePath(args[1])
 country = toString(args[2])
 outputFile<-file.path(args[3])
-r0 = args[4]
-table_name = args[5]
-table_delim = args[6]
-table_date_col = args[7]
-table_active_col = args[8]
-table_date_format = args[9]
+table_name = args[4]
+table_delim = args[5]
+table_date_col = args[6]
+table_active_col = args[7]
+table_date_format = args[8]
 
 # A pre-set date format for metric output
 input_date_format = "%Y-%m-%d"
@@ -141,26 +139,15 @@ interp.table["date"] = days.as.Date(interp.table$t, minDate)
 interp.table[is.na(interp.table)] = 0
 # Remove rows with zeros in smooth median
 interp.table <- interp.table[interp.table$smoothMedian != 0,]
+# Add date column
+interp.table$date <- days.as.Date(interp.table$t, minDate)
 
 # Write tables and plot
-write.csv(interp.table,paste0(outputDir,"/interpolation_",country,".csv"), row.names = F, col.names = T)
-outputFileInter<-paste0(normalizePath(outputDir),"/",fileName)
-outputFileInterDots<-paste0(normalizePath(outputDir),"/","wdots_",fileName)
+write.csv(interp.table,paste0(outputDir,"/",fileName), row.names = F, col.names = T)
+outputFileInter<-paste0(normalizePath(outputDir),"/",substr(fileName,1,(nchar(fileName)-4)),".pdf")
+outputFileInterDots<-paste0(normalizePath(outputDir),"/","wdots_",substr(fileName,1,(nchar(fileName)-4)),".pdf")
 plotInterpolationWithNewCases(cases.table, interp.table, input.table, minDate, outputFileInter, outputFileInterDots,country)
 
 # Write estimated theta table
-write.csv(input.table,paste0(outputDir,"/theta_",country,".csv"), row.names = F)
-
-# R0 package
-# Wallinga and Teunis (2004)
-# Generation intervals distribution - gamma with mean = 5, sd = 1.9
-if (r0=='y') {
-  cat("--- Compute R0 ---\n\n")
-  GT <- generation.time(type = "gamma",
-                        val = c(5,1.9), truncate = NULL, step = 1, first.half = TRUE,
-                        p0 = TRUE)
-  td <- est.R0.TD(as.numeric(unlist(round(interp.table$smoothMedian))),GT=GT,t=days.as.Date(interp.table$t, minDate))
-  td.table <- data.frame(t=interp.table[1:length(td$R),]$t,value=as.vector(td$R),lower=as.vector(td$conf.int$lower),upper=as.vector(td$conf.int$upper))
-  outputFileWT <- paste0(normalizePath(outputDir),"/","wt04_",fileName)
-  plotR0Package(td.table,"WT04",outputFileWT)
-}
+input.table.clean <- data.frame(date=input.table$meanBinDate,phi=input.table$value,variance=input.table$variance)
+write.csv(input.table.clean,paste0(outputDir,"/theta.csv"), row.names = F)
