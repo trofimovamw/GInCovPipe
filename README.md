@@ -8,7 +8,7 @@ As an input the pipeline requires a file containing sequences and a file with a 
 For the sequences it is important that they contain a sequencing-, or better, sample-date. The date must have the format **%YYYY-%mm-%dd**
 and has to be either part of the sequence-name or provided in an additional tsv-file.
 - If the date is part of the sequence-name, then the name should look like this: **'some_name | %YYYY-%mm-%dd'**.   
-- If the date is provided in an additional file, then the file must have a column **'strain'**, containing the sequence name, and a column **'date'**, containing the collection date of the sample. (still true?)
+- If the date is provided in an additional file, add the date to corresponding FASTA headers.
 
 ## Output
 The pipeline creates a folder **'results'**, containing all (intermediate) outputs, with the following structure:
