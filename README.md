@@ -1,6 +1,6 @@
 # *G*enome-based *In*cidence Estimation of *Cov*id-19 *Pipe*line
 
-This pipeline was created as a simple tool to study the change of nucleotide diversity over time in a collection of sequences.
+This pipeline was created as an easy-to-use tool to study the change of nucleotide diversity over time in a collection of sequences.
 
 ## Input
 As an input the pipeline requires a file containing sequences and a file with a reference consenus sequence.
