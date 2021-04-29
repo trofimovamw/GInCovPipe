@@ -159,7 +159,7 @@ The pipeline creates a folder **'results'**, containing all (intermediate) outpu
     │   
     └── ...
 ```
-The final diversity analysis (plots and tables) can be found in the subfolder **results/bins_results** and the smoothed spline trajectory can be found in subfolder **results/interpolation**. The final output (depending on the setup of the pipeline) contains the following tables and plots:
+The final diversity analysis (plots and tables) can be found in the subfolder **results/bins_results** and the smoothed trajectory can be found in subfolder **results/interpolation**. The final output (depending on the setup of the pipeline) contains the following tables and plots:
 
 - In folder *interpolation*:
     - *estimates.csv*: table containing estimates of population size for all binning strategies
