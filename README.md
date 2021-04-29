@@ -62,10 +62,10 @@ If the headers in the sequence file do not contain the date, you can add it to h
 
 #### 2.2 Reported cases data file
 
-To compare estimated population dynamics with reported active cases, include a table in the folder [`reported_cases`](./reported_cases). Also provide the following parameters in the corresponding config field like this:
+To compare estimated population dynamics with reported active cases, you can include a table in the folder [`reported_cases`](./reported_cases). Also provide the following parameters in the corresponding config field like this:
 
   ```
-  reported_cases: ["reported_cases.csv","\t","date","active_cases","%m/%d/%y"]
+  reported_cases: ["path/to/reported_cases.csv","\t","date","active_cases","%m/%d/%y"]
   ```
 
 where the first element of the list is the file name with format extension, the second element is the delimiter type in this file, date column name, active cases column name, and a format the date is stored in.
@@ -80,7 +80,7 @@ If no reported cases data is provided, leave the fields empty like this:
 Copy and paste the file path of reference/consensus sequence into the variable **consensus** of [`config.yaml`](./config.yaml).
 
   ```
-  consensus: "path/to/consensus/sequence"
+  consensus: "path/to/consensus/sequence.fasta"
   ```
 
 #### 2.4 Binning parameters
