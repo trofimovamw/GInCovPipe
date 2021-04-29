@@ -12,13 +12,13 @@ and has to be either part of the sequence-name or provided in an additional tsv-
 
 ## How to run this pipeline - A small instruction
 
-This is a small guide on how to run the pipeline. If you follow this instruction, it will be easier to understand what went wrong in case of any trouble.
+This is a small guide on how to set up and run the pipeline.
 
 ### 1. Prerequisites
 To run this pipeline, some tools have to be installed. While some are necessary (Snakemake), others are optional (Conda/Miniconda).
 However, we recommend to follow all steps, since we cannot guarantee functionality otherwise.
 
-#### 1.1 Install Conda/Miniconda - if you haven't yet
+#### 1.1 Install Conda/Miniconda
 
 Conda will manage the dependencies of our pipeline. Instructions can be found here: https://docs.conda.io/projects/conda/en/latest/user-guide/install
 
@@ -96,7 +96,7 @@ min_bin_size: 15
 max_days_span: 21
 ```
 
-If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (2%, 5%, 7%) is used. ALternatively, all arrays can be given in the configuration file as a list, like this:
+If parameter **number_per_bin** is an empty list, a default mode with predefined fractions of reads (2%, 5%, 7%) is used. Alternatively, all arrays can be given in the configuration file as a list, like this:
 
 ```
 number_per_bin: 
@@ -122,7 +122,7 @@ Other options for specifying this parameter also work. For examples see https://
 
 ### 3. Run
 
-To run the pipeline, go to the pipeline directory (where the Snakefile is) and activate the conda environment you created in step 1.2. Then enter the following command to execute the pipeline:
+To run the pipeline, go to the pipeline directory (where the Snakefile is) and activate the conda environment created in step 1.2. Then enter the following command to execute the pipeline:
 
 ```
 snakemake --use-conda --snakefile Snakefile --configfile path/to/config.yaml -j -d path/to/workdir
