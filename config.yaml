@@ -24,4 +24,4 @@ freq_cutoff: 2
 # 10. Sample name for plot grouping, e.g. country or data set name
 group: "group"
 # 11. Calculate R0! y/n
-R0: "y"
+R0: y
