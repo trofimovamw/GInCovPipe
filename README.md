@@ -164,8 +164,8 @@ The final diversity analysis (plots and tables) can be found in the subfolder **
 - In folder *interpolation*:
     - *estimates.csv*: table containing estimates of population size for all binning strategies
     - *interpolation.csv*: table containing interpolated final trajectory of population size; the trajectory is calculated by  combining all binning strategies
-    - *interpolation.pdf*: plot of interpoolated trajectory, optionally overlayed with reported cases table (if the corresponding table was given)
-    - *wdots_interpolation.pdf*: plot of interpoolated trajectory with point estimates dots scaled by corresponding sub-sample size, optionally overlayed with reported cases table (if the corresponding table was given)
+    - *interpolation.pdf*: plot of interpolated trajectory, optionally overlayed with reported cases trajectory (if the corresponding table was given)
+    - *wdots_interpolation.pdf*: plot of interpolated trajectory with point estimate dots scaled by corresponding sub-sample size, optionally overlayed with reported cases trajectory (if the corresponding table was given)
 - In folder *r0* (if option to calculate reproduction number is chosen):
     -  *r0.csv*: table containing daily reproductive number estimates; calculated from the interpolated trajectory
     -  *r0.pdf*: plot of daily reproductive number estimates with confidence interval 
