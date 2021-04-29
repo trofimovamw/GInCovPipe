@@ -10,38 +10,6 @@ and has to be either part of the sequence-name or provided in an additional tsv-
 - If the date is part of the sequence-name, then the name should look like this: **'some_name | %YYYY-%mm-%dd'**.   
 - If the date is provided in an additional file, add the date to corresponding FASTA headers.
 
-## Output
-The pipeline creates a folder **'results'**, containing all (intermediate) outputs, with the following structure:
-```
-    ├── results                                 # Main results folder
-    │   ├── bam                                 # sorted and indexed bam files
-    │   ├── bins                                # binning results
-    │       ├── cal_week                        # binned by calendar week
-    │       ├── eq_days_10                      # binned by equal days                       
-    │       ├── eq_size_100                     # binned by equal number of sequences
-    │       └── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
-    │               ├── bin_*.bam               # binned sequences as BAM
-    │               ├── bin_*.bai               # index files                       
-    │               ├── header_*.tsv            # header files (seq. name & date)
-    |               ├── range_*.tsv             # range of dates of the corresponding bin
-    |               └── list_of_files.tsv       # list of file names in the binning mode
-    │   ├── bins_results                        # Individual binning results plots (and tables)
-    │   ├── meta                                # Meta information about all used sequences (name and collection date)
-    │   ├── interpolation                       # Plots and tables for final interpolated trajectory
-    |       ├── interpolation.csv               # table with interpolated population size estimates
-    │       ├── estimates.csv                   # table wih raw population size estimates                       
-    │       ├── interpolation.pdf               # plot of interpolated population size
-    |       └── wdots_interpolation.pdf         # plot of interpolated population size with dot size scaled by bin size
-    │   ├── r0                                  # Reproduction number estimate
-    |       ├── r0.csv                          # table with daily reproduction number estimates
-    │       └── r0.pdf                          # plot of daily reproduction number estimates                       
-    │   └── raw                                 # Preprocessed files
-    │   
-    └── ...
-```
-The final diversity analysis (plots and tables) can be found in the subfolder **results/bins_results** and the smoothed spline trajectory can be found in subfolder **results/interpolation**.
-
-
 ## How to run this pipeline - A small instruction
 
 This is a small guide on how to run the pipeline. If you follow this instruction, it will be easier to understand what went wrong in case of any trouble.
@@ -162,4 +130,43 @@ snakemake --use-conda --snakefile Snakefile --configfile path/to/config.yaml -j 
 
 The ---use-conda parameter allows Snakemake to install packages that are listed in the environment file [`env.yml`](./env/env.yml). With parameter --configfile you can give the configuration file [`config.yml`], described above. The -j parameter determines the number of available CPU cores to use in the pipeline. Optionally you can provide the number of cores, e.g. -j 4. With parameter -d you can set the work directory, i.e. where the results of the pipeline are written to.
 
-Output of each pipeline step can be found in folder **results**.
+## Output
+The pipeline creates a folder **'results'**, containing all (intermediate) outputs, with the following structure:
+```
+    ├── results                                 # Main results folder
+    │   ├── bam                                 # sorted and indexed bam files
+    │   ├── bins                                # binning results
+    │       ├── cal_week                        # binned by calendar week
+    │       ├── eq_days_10                      # binned by equal days                       
+    │       ├── eq_size_100                     # binned by equal number of sequences
+    │       └── fuzzy_days_100                  # binned by equal number of sequences (fuzzy)
+    │               ├── bin_*.bam               # binned sequences as BAM
+    │               ├── bin_*.bai               # index files                       
+    │               ├── header_*.tsv            # header files (seq. name & date)
+    |               ├── range_*.tsv             # range of dates of the corresponding bin
+    |               └── list_of_files.tsv       # list of file names in the binning mode
+    │   ├── bins_results                        # Individual binning results plots (and tables)
+    │   ├── meta                                # Meta information about all used sequences (name and collection date)
+    │   ├── interpolation                       # Plots and tables for final interpolated trajectory
+    |       ├── interpolation.csv               # table with interpolated population size estimates
+    │       ├── estimates.csv                   # table wih raw population size estimates                       
+    │       ├── interpolation.pdf               # plot of interpolated population size
+    |       └── wdots_interpolation.pdf         # plot of interpolated population size with dot size scaled by bin size
+    │   ├── r0                                  # Reproduction number estimate
+    |       ├── r0.csv                          # table with daily reproduction number estimates
+    │       └── r0.pdf                          # plot of daily reproduction number estimates                       
+    │   └── raw                                 # Preprocessed files
+    │   
+    └── ...
+```
+The final diversity analysis (plots and tables) can be found in the subfolder **results/bins_results** and the smoothed spline trajectory can be found in subfolder **results/interpolation**. The final output (depending on the setup of the pipeline) contains the following tables and plots:
+
+- In folder *interpolation*:
+    - *estimates.csv*: table containing estimates of population size for all binning strategies
+    - *interpolation.csv*: table containing interpolated final trajectory of population size; the trajectory is calculated by  combining all binning strategies
+    - *interpolation.pdf*: plot of interpoolated trajectory, optionally overlayed with reported cases table (if the corresponding table was given)
+    - *wdots_interpolation.pdf*: plot of interpoolated trajectory with point estimates dots scaled by corresponding sub-sample size, optionally overlayed with reported cases table (if the corresponding table was given)
+- In folder *r0* (if option to calculate reproduction number is chosen):
+    -  *r0.csv*: table containing daily reproductive number estimates; calculated from the interpolated trajectory
+    -  *r0.pdf*: plot of daily reproductive number estimates with confidence interval 
+
