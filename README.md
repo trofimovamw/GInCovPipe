@@ -1,12 +1,12 @@
 # *G*enome-based *In*cidence Estimation of *Cov*id-19 *Pipe*line
 
-This pipeline was created as an easy-to-use tool to study the change of nucleotide diversity over time in a collection of sequences.
+This pipeline was created as an easy-to-use tool to study the change of population size over time using a collection of sequences. By binning a sequence data set that spans a long time period in several different ways, this tool calculates a continuous trajectory of a population size estimate. 
 
 ## Input
 As an input the pipeline requires a file containing sequences and a file with a reference consenus sequence.
 
 For the sequences it is important that they contain a sequencing-, or better, sample-date. The date must have the format **%YYYY-%mm-%dd**
-and has to be either part of the sequence-name or provided in an additional tsv-file.
+and can be either part of the sequence-name or provided in an additional file.
 - If the date is part of the sequence-name, then the name should look like this: **'some_name | %YYYY-%mm-%dd'**.   
 - If the date is provided in an additional file, add the date to corresponding FASTA headers.
 
@@ -15,8 +15,7 @@ and has to be either part of the sequence-name or provided in an additional tsv-
 This is a small guide on how to set up and run the pipeline.
 
 ### 1. Prerequisites
-To run this pipeline, some tools have to be installed. While some are necessary (Snakemake), others are optional (Conda/Miniconda).
-However, we recommend to follow all steps, since we cannot guarantee functionality otherwise.
+Some tools have to be installed to run the analysis. We recommend following the steps below to set up the pipeline.
 
 #### 1.1 Install Conda/Miniconda
 
