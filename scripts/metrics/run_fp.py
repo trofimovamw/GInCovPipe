@@ -186,7 +186,7 @@ for folder in binnings:
     ax1.set_title("%s" % plot_title)
     ax1.plot(mean_header_bin, np.array(thetas), '-', color='royalblue')
     ax1.set_xlabel('Mean bin date')
-    ax1.set_ylabel(r'$\theta_{est}$')
+    ax1.set_ylabel(r'$\phi_{est}$')
     ax1.set_xticks(mean_header_bin[::10])
     ax1.set_xticklabels(mean_header_bin[::10])
     name = str(out_dir)+"/plot_"+folder+"_thetas.png"
@@ -194,7 +194,7 @@ for folder in binnings:
     fig.clf()
 
     # Write bin file
-    name_table = "table_"+file_suffix+"_"+folder+"_thetas_var_from_size.tsv"
+    name_table = "table_"+file_suffix+"_"+folder+"_phi_estimate_var_from_size.tsv"
     table_path = str(out_dir) + '/' + name_table
     with open(table_path, 'w+', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter='\t',
@@ -217,7 +217,7 @@ print("\n      Making the final results table...")
 # Make merged dataset sorted by date
 bin_merging_data_ = sorted(bin_merging_data)
 times = np.arange(0, len(bin_merging_data_))
-name_table = "table_merged_thetas_var_from_size.tsv"
+name_table = "table_merged_phi_estimates_var_from_size.tsv"
 
 table_path = str(out_dir) + '/' + name_table
 

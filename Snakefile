@@ -143,7 +143,7 @@ rule theta_estimates:
 	input:
 		"results/bins/list_of_binnings.tsv"
 	output:
-		"results/bins_results/table_merged_thetas_var_from_size.tsv"
+		"results/bins_incidence/table_merged_phi_estimates_var_from_size.tsv"
 	params:
 		ref = config["consensus"],
 		cutoff = config["freq_cutoff"],
@@ -158,14 +158,14 @@ rule theta_estimates:
 
 rule interpolation:
 	input:
-		infile = "results/bins_results/table_merged_thetas_var_from_size.tsv"
+		infile = "results/bins_incidence/table_merged_phi_estimates_var_from_size.tsv"
 	params:
 		rep_cases = config["reported_cases"],
 		group = config["group"]
 	conda:
 		"env/env.yml"
 	output:
-		result = "results/interpolation/interpolation.csv",
+		result = "results/incidence/incidence.csv",
 		#abs_path = os.path.join(workflow.basedir,"results/splines/out_spline.pdf"),
 	shell:
 		"Rscript {workflow.basedir}/scripts/Rscripts/splines/computeInterpolation.R {input.infile} \
@@ -174,7 +174,7 @@ rule interpolation:
 if config["R0"]:
 	rule r0:
 		input:
-			infile = "results/interpolation/interpolation.csv"
+			infile = "results/incidence/incidence.csv"
 		output:
 			outfile = "results/r0/r0.csv"
 		conda:
