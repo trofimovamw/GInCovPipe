@@ -1,5 +1,7 @@
 # *G*enome-based *In*cidence Estimation of *Cov*id-19 *Pipe*line
 
+*updates moved to https://github.com/KleistLab/GInPipe*
+
 This pipeline was created as an easy-to-use tool to study the change of population size over time using a collection of sequences. By binning a sequence data set that spans a long time period in several different ways, this tool calculates a continuous trajectory of a population size estimate. 
 
 ## Input
